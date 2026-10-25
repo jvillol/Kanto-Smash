@@ -1,0 +1,11 @@
+{
+  "csharp.suppressDotnetInstallWarning": true,
+  "csharp.suppressDotnetRestoreNotification": true,
+  "csharp.suppressProjectLoadNotifications": true,
+  "dotnet.server.suppressLspErrorNotifications": true,
+  "omnisharp.autoStart": false,
+  "csharp.showOmnisharpLogOnError": false,
+  "files.associations": {
+    "*.cs": "csharp"
+  }
+}
