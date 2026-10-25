@@ -41,7 +41,7 @@ namespace KantoSmash
             if (targetPlayer == null || _self.hitstunTimer > 0f)
                 return;
 
-            float speedMult = difficulty == AIDifficulty.Easy ? 0.60f : (difficulty == AIDifficulty.Medium ? 0.85f : 1.08f);
+            float speedMult = difficulty == AIDifficulty.Easy ? 0.60f : (difficulty == AIDifficulty.Medium ? 0.72f : 0.85f);
 
             // 1. Recuperación si está fuera de la plataforma principal
             if (Mathf.Abs(transform.position.x) > 5.8f || transform.position.y < -2.2f)
@@ -50,7 +50,7 @@ namespace KantoSmash
                 _self.facingDirection = dirToCenter;
 
                 // En fácil, la recuperación es más tardía
-                float recoveryChance = difficulty == AIDifficulty.Easy ? 0.70f : 1.0f;
+                float recoveryChance = difficulty == AIDifficulty.Easy ? 0.65f : (difficulty == AIDifficulty.Medium ? 0.82f : 0.95f);
                 if (Random.value <= recoveryChance)
                 {
                     _rb.linearVelocity = new Vector2(dirToCenter * _self.moveSpeed * speedMult, _rb.linearVelocity.y);
@@ -79,18 +79,18 @@ namespace KantoSmash
                         _isHesitating = Random.value < 0.40f; // Pausa / duda en fácil
                         break;
                     case AIDifficulty.Medium:
-                        _decisionCooldown = Random.Range(0.25f, 0.48f);
-                        _isHesitating = Random.value < 0.12f;
+                        _decisionCooldown = Random.Range(0.40f, 0.75f);
+                        _isHesitating = Random.value < 0.24f; // Nivel intermedio justo
                         break;
                     case AIDifficulty.Hard:
-                        _decisionCooldown = Random.Range(0.10f, 0.22f);
-                        _isHesitating = false;
+                        _decisionCooldown = Random.Range(0.25f, 0.48f);
+                        _isHesitating = Random.value < 0.10f; // Anterior nivel medio
                         break;
                 }
 
                 if (!_isHesitating)
                 {
-                    float jumpChance = difficulty == AIDifficulty.Easy ? 0.25f : 0.65f;
+                    float jumpChance = difficulty == AIDifficulty.Easy ? 0.25f : (difficulty == AIDifficulty.Medium ? 0.45f : 0.65f);
                     if (distY > 1.6f && _self.isGrounded && Random.value < jumpChance)
                     {
                         _self.PerformJump(isBoostedJump: distY > 3.0f && difficulty != AIDifficulty.Easy);
@@ -101,13 +101,13 @@ namespace KantoSmash
                     }
 
                     // Atacar cuando está en rango
-                    float attackDist = difficulty == AIDifficulty.Easy ? 1.25f : 1.55f;
+                    float attackDist = difficulty == AIDifficulty.Easy ? 1.25f : (difficulty == AIDifficulty.Medium ? 1.40f : 1.55f);
                     if (distX <= attackDist && Mathf.Abs(distY) <= 1.2f)
                     {
-                        float strongChance = difficulty == AIDifficulty.Easy ? 0.10f : (difficulty == AIDifficulty.Medium ? 0.35f : 0.55f);
+                        float strongChance = difficulty == AIDifficulty.Easy ? 0.10f : (difficulty == AIDifficulty.Medium ? 0.20f : 0.35f);
                         if (targetPlayer.damagePercentage >= 80f && difficulty != AIDifficulty.Easy)
                         {
-                            strongChance = Mathf.Min(0.85f, strongChance * 1.8f);
+                            strongChance = Mathf.Min(0.85f, strongChance * 1.6f);
                         }
                         _self.TryExecuteAttack(Random.value < strongChance);
                     }
@@ -115,7 +115,7 @@ namespace KantoSmash
                     // Usar Habilidad Especial única tácticamente
                     if (_self.specialCooldownTimer <= 0f && distX <= 3.5f)
                     {
-                        float spChance = difficulty == AIDifficulty.Easy ? 0.15f : 0.45f;
+                        float spChance = difficulty == AIDifficulty.Easy ? 0.10f : (difficulty == AIDifficulty.Medium ? 0.25f : 0.45f);
                         if (Random.value < spChance)
                         {
                             _self.TryExecuteSpecialAbility();

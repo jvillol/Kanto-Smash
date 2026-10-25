@@ -1783,17 +1783,17 @@ const DIFFICULTY_CONFIG = {
     badge: "🟡 Medio",
     roleTag: "RIVAL (IA) - MEDIO 🟡",
     hudTag: "IA - MEDIO 🟡",
-    speedMult: 0.85,             // Velocidad equilibrada
-    reactionMin: 16,             // Reacción moderada
-    reactionMax: 28,
-    hesitationChance: 0.12,
-    attackRangeX: 84,
-    attackRangeY: 58,
-    attackCooldownBonus: 0,
-    strongAttackChance: 0.32,
-    jumpChance: 0.08,
-    dropChance: 0.08,
-    recoveryChance: 0.95,
+    speedMult: 0.72,             // Velocidad intermedia entre fácil y difícil
+    reactionMin: 26,             // Reacción moderada, da tiempo al jugador
+    reactionMax: 46,
+    hesitationChance: 0.24,      // Pequeñas pausas/dudas que permiten contraatacar
+    attackRangeX: 72,            // Rango medio
+    attackRangeY: 52,
+    attackCooldownBonus: 10,     // Pequeña ventana de castigo tras golpear
+    strongAttackChance: 0.20,    // Uso moderado de ataques fuertes
+    jumpChance: 0.05,
+    dropChance: 0.05,
+    recoveryChance: 0.82,        // Se recupera bien pero es vulnerable a buenos lanzamientos
     useBoostedRecovery: true
   },
   hard: {
@@ -1801,17 +1801,17 @@ const DIFFICULTY_CONFIG = {
     badge: "🔴 Difícil",
     roleTag: "RIVAL (IA) - DIFÍCIL 🔴",
     hudTag: "IA - DIFÍCIL 🔴",
-    speedMult: 1.08,             // Súper ágil y agresiva
-    reactionMin: 7,              // Reflejos casi inmediatos
-    reactionMax: 14,
-    hesitationChance: 0.0,       // No duda nunca
-    attackRangeX: 98,
-    attackRangeY: 68,
-    attackCooldownBonus: -3,
-    strongAttackChance: 0.54,    // Caza KOs activamente con ataques fuertes
-    jumpChance: 0.16,
-    dropChance: 0.16,
-    recoveryChance: 1.0,
+    speedMult: 0.85,             // (Anterior nivel medio) Ágil y competitiva
+    reactionMin: 16,             // Buena velocidad de reacción
+    reactionMax: 28,
+    hesitationChance: 0.10,      // Duda muy poco
+    attackRangeX: 84,            // Buen alcance
+    attackRangeY: 58,
+    attackCooldownBonus: 0,      // Sin enfriamiento extra
+    strongAttackChance: 0.35,    // Alterna fuertes con frecuencia
+    jumpChance: 0.08,
+    dropChance: 0.08,
+    recoveryChance: 0.95,        // Recuperación fiable
     useBoostedRecovery: true
   }
 };
@@ -2350,7 +2350,7 @@ function updateAIFighter(ai, target) {
   if (ai.specialCooldown <= 0 && !ai.attackState) {
     const isFalling = ai.y > STAGE.mainPlatform.y + 10;
     const inRange = dist < 260;
-    const triggerChance = aiDifficulty === "hard" ? 0.08 : (aiDifficulty === "medium" ? 0.035 : 0.012);
+    const triggerChance = aiDifficulty === "hard" ? 0.045 : (aiDifficulty === "medium" ? 0.022 : 0.008);
     if ((isFalling || inRange) && Math.random() < triggerChance) {
       ai.useSpecial(target);
     }
