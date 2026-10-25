@@ -1,12 +1,11 @@
 {
+  "dotnet.defaultSolution": "KantoSmash.sln",
+  "dotnet.server.suppressLspErrorNotifications": true,
+  "dotnet.server.suppressProjectLoadNotifications": true,
+  "csharp.suppressProjectLoadNotifications": true,
   "csharp.suppressDotnetInstallWarning": true,
   "csharp.suppressDotnetRestoreNotification": true,
-  "csharp.suppressProjectLoadNotifications": true,
-  "dotnet.server.suppressLspErrorNotifications": true,
-  "omnisharp.autoStart": false,
   "csharp.showOmnisharpLogOnError": false,
-  "files.associations": {
-    "*.cs": "csharp"
-  }
+  "omnisharp.autoStart": false,
+  "csharp.maxProjectFileCountForDiagnosticAnalysis": 0
 }
-
