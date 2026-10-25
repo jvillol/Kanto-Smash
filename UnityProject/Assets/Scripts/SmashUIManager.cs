@@ -171,11 +171,11 @@ namespace KantoSmash
 
             GUI.backgroundColor = new Color(1f, 0.25f, 0.35f);
             GUI.Box(new Rect(30, bottomY, 310, 110),
-                $"JUGADOR 1 (TÚ)\n{p1Sel.FormattedNumber} {p1Sel.name}\nTipo: {p1Sel.primaryType}\nVEL:{p1Sel.speed} ATQ:{p1Sel.attack} PESO:{p1Sel.weight}");
+                $"JUGADOR 1 (TÚ)\n{p1Sel.FormattedNumber} {p1Sel.name} ({p1Sel.primaryType})\n★ Especial: {p1Sel.SpecialAbilityName}\nVEL:{p1Sel.speed} ATQ:{p1Sel.attack} PESO:{p1Sel.weight}");
 
             GUI.backgroundColor = new Color(0.2f, 0.65f, 1f);
             GUI.Box(new Rect(Screen.width - 340, bottomY, 310, 110),
-                $"RIVAL (IA)\n{aiSel.FormattedNumber} {aiSel.name}\nTipo: {aiSel.primaryType}\nVEL:{aiSel.speed} ATQ:{aiSel.attack} PESO:{aiSel.weight}");
+                $"RIVAL (IA)\n{aiSel.FormattedNumber} {aiSel.name} ({aiSel.primaryType})\n★ Especial: {aiSel.SpecialAbilityName}\nVEL:{aiSel.speed} ATQ:{aiSel.attack} PESO:{aiSel.weight}");
 
             // Selector de Dificultad de la IA
             float diffX = Screen.width / 2f - 150f;
@@ -242,8 +242,8 @@ namespace KantoSmash
             GUI.Box(new Rect(Screen.width / 2f - 85f, 14f, 170f, 46f), $"{mins:D2}:{secs:D2}", timerStyle);
 
             // Controles recordatorio arriba a la izquierda
-            GUI.Box(new Rect(14f, 14f, 410f, 54f),
-                "A/D: Mover | W: Saltar (2x W: Salto Potenciado) | S: Agacharse (2x S: Bajar)\nClick Izq: Ataque Rápido | Click Der: Ataque Fuerte");
+            GUI.Box(new Rect(14f, 14f, 440f, 54f),
+                "A/D: Mover | W: Saltar (2x W: Salto Potenciado) | S: Bajar plataforma\nClick Izq: Rápido | Click Der: Fuerte | E / Espacio: Habilidad Especial");
 
             if (gm.playerFighter != null)
             {

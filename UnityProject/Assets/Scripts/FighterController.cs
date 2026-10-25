@@ -95,6 +95,7 @@ namespace KantoSmash
             if (hitstunTimer > 0f) hitstunTimer -= Time.deltaTime;
             if (invincibilityTimer > 0f) invincibilityTimer -= Time.deltaTime;
             if (_attackCooldownTimer > 0f) _attackCooldownTimer -= Time.deltaTime;
+            if (specialCooldownTimer > 0f) specialCooldownTimer -= Time.deltaTime;
 
             CheckGroundStatus();
 
@@ -156,6 +157,64 @@ namespace KantoSmash
             else if (Input.GetMouseButtonDown(1))
             {
                 TryExecuteAttack(isStrongAttack: true);
+            }
+
+            // 5. Habilidad Especial Única: Tecla E o Espacio
+            if (Input.GetKeyDown(KeyCode.E) || Input.GetKeyDown(KeyCode.Space) || Input.GetMouseButtonDown(2))
+            {
+                TryExecuteSpecialAbility();
+            }
+        }
+
+        public float specialCooldownTimer = 0f;
+        public const float MaxSpecialCooldown = 5.5f;
+
+        public void TryExecuteSpecialAbility()
+        {
+            if (specialCooldownTimer > 0f || hitstunTimer > 0f || pokemonData == null) return;
+            specialCooldownTimer = MaxSpecialCooldown;
+
+            FighterController opponent = (SmashGameManager.Instance.playerFighter == this)
+                ? SmashGameManager.Instance.aiFighter
+                : SmashGameManager.Instance.playerFighter;
+
+            ExecuteTypeSpecial(pokemonData.primaryType, opponent);
+        }
+
+        private void ExecuteTypeSpecial(string type, FighterController opponent)
+        {
+            if (opponent == null) return;
+
+            switch (type)
+            {
+                case "Eléctrico":
+                    invincibilityTimer = 0.5f;
+                    _rb.linearVelocity = new Vector2(facingDirection * 18f, _rb.linearVelocity.y);
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 12f, 8f), 0.35f);
+                    opponent.damagePercentage += 8f;
+                    break;
+                case "Fuego":
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 14f, 7f), 0.4f);
+                    opponent.damagePercentage += 10f;
+                    break;
+                case "Agua":
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 16f, 6f), 0.35f);
+                    opponent.damagePercentage += 7f;
+                    break;
+                case "Planta":
+                    damagePercentage = Mathf.Max(0f, damagePercentage - 10f); // Drenaje
+                    opponent.damagePercentage += 7f;
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 9f, 6f), 0.3f);
+                    break;
+                case "Psíquico":
+                    _rb.linearVelocity = new Vector2(_rb.linearVelocity.x, 16f); // Salva de caída
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 10f, 15f), 0.45f);
+                    opponent.damagePercentage += 8f;
+                    break;
+                default:
+                    opponent.ReceiveKnockback(new Vector2(facingDirection * 15f, 9f), 0.4f);
+                    opponent.damagePercentage += 10f;
+                    break;
             }
         }
 

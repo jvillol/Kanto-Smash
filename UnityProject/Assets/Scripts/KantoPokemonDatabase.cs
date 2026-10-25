@@ -21,6 +21,30 @@ namespace KantoSmash
 
         public string FormattedNumber => $"#{id:D3}";
         public string SpriteUrl => $"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/{id}.png";
+
+        public string SpecialAbilityName => GetSpecialAbilityName(primaryType);
+
+        public static string GetSpecialAbilityName(string type)
+        {
+            switch (type)
+            {
+                case "Eléctrico": return "Rayo Fulgor";
+                case "Fuego": return "Llamarada Ígnea";
+                case "Agua": return "Hidrobomba Gigante";
+                case "Planta": return "Drenadoras Esporas";
+                case "Psíquico": return "Onda Telequinética";
+                case "Hielo": return "Ventisca Congelante";
+                case "Lucha": return "Ultra Golpe Sísmico";
+                case "Fantasma": return "Paso Espectral";
+                case "Dragón": return "Cometa Dracónico";
+                case "Roca": return "Lluvia de Rocas";
+                case "Tierra": return "Terremoto Sísmico";
+                case "Veneno": return "Bomba Lodo Tóxica";
+                case "Volador": return "Vendaval Ciclón";
+                case "Bicho": return "Tijera X Cortante";
+                default: return "Hiperrayo Destructor";
+            }
+        }
     }
 
     public static class KantoPokemonDatabase

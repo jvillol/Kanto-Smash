@@ -111,6 +111,16 @@ namespace KantoSmash
                         }
                         _self.TryExecuteAttack(Random.value < strongChance);
                     }
+
+                    // Usar Habilidad Especial única tácticamente
+                    if (_self.specialCooldownTimer <= 0f && distX <= 3.5f)
+                    {
+                        float spChance = difficulty == AIDifficulty.Easy ? 0.15f : 0.45f;
+                        if (Random.value < spChance)
+                        {
+                            _self.TryExecuteSpecialAbility();
+                        }
+                    }
                 }
             }
 

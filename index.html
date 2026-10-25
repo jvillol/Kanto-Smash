@@ -388,6 +388,75 @@
     height: 100%;
     background: var(--gold);
   }
+  .special-ability-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,0,0,0.45);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 7px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #e3ecfc;
+    margin-top: 6px;
+  }
+  .special-ability-badge .sp-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+  .special-ability-badge strong {
+    color: var(--gold);
+    font-weight: 800;
+    display: block;
+  }
+  .special-ability-desc {
+    font-size: 10px;
+    color: #9fb0d6;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 210px;
+  }
+  .hud-special-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 5px;
+    font-size: 10px;
+    font-weight: 800;
+  }
+  .special-tag {
+    padding: 2px 7px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+  }
+  .special-tag.ready {
+    background: #00e676;
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 230, 118, 0.6);
+  }
+  .special-tag.cooldown {
+    background: rgba(255,255,255,0.12);
+    color: #8fa0c2;
+  }
+  .special-bar-bg {
+    flex: 1;
+    height: 5px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 3px;
+    margin: 0 8px;
+    overflow: hidden;
+  }
+  .special-bar-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, #00b0ff, #00e676);
+    transition: width 0.1s linear;
+  }
   .mini-actions {
     display: flex;
     flex-direction: column;
@@ -886,6 +955,13 @@
           <div class="stat-box">ATQ <div class="stat-fill-bg"><div id="p1-stat-atk" class="stat-fill"></div></div></div>
           <div class="stat-box">PESO <div class="stat-fill-bg"><div id="p1-stat-wgt" class="stat-fill"></div></div></div>
         </div>
+        <div id="p1-special-info" class="special-ability-badge">
+          <span id="p1-special-icon" class="sp-icon">⚡</span>
+          <div>
+            <strong id="p1-special-name">Rayo Fulgor</strong>
+            <div id="p1-special-desc" class="special-ability-desc">Relámpago veloz hacia adelante</div>
+          </div>
+        </div>
       </div>
       <div class="mini-actions">
         <button class="btn-small" onclick="event.stopPropagation(); pickRandomFor('p1')">🎲 Al Azar</button>
@@ -933,6 +1009,13 @@
           <div class="stat-box">ATQ <div class="stat-fill-bg"><div id="ai-stat-atk" class="stat-fill"></div></div></div>
           <div class="stat-box">PESO <div class="stat-fill-bg"><div id="ai-stat-wgt" class="stat-fill"></div></div></div>
         </div>
+        <div id="ai-special-info" class="special-ability-badge">
+          <span id="ai-special-icon" class="sp-icon">🔥</span>
+          <div>
+            <strong id="ai-special-name">Llamarada Ígnea</strong>
+            <div id="ai-special-desc" class="special-ability-desc">Estrella ígnea abrasadora</div>
+          </div>
+        </div>
       </div>
       <div class="mini-actions">
         <button class="btn-small" onclick="event.stopPropagation(); pickRandomFor('ai')">🎲 Al Azar</button>
@@ -947,9 +1030,9 @@
 <!-- ================= IN-GAME HUD ================= -->
 <div id="battle-hud" class="hidden">
   <div class="hud-controls-legend">
-    <b>A / D</b>: Izquierda / Derecha &nbsp;|&nbsp; <b>W</b>: Saltar (<b>W+W</b>: Salto Potenciado)<br>
-    <b>S</b>: Agacharse (<b>S+S</b>: Bajar de plataforma)<br>
-    <b>Click Izquierdo</b>: Ataque Rápido (+% bajo, veloz) &nbsp;|&nbsp; <b>Click Derecho</b>: Ataque Fuerte (+% alto, potente)
+    <b>A / D</b>: Izq / Der &nbsp;|&nbsp; <b>W</b>: Saltar (<b>W+W</b>: Salto Potenciado)<br>
+    <b>S</b>: Agacharse (<b>S+S</b>: Bajar plataforma)<br>
+    <b>Click Izq</b>: Ataque Rápido &nbsp;|&nbsp; <b>Click Der</b>: Ataque Fuerte &nbsp;|&nbsp; <b>E / Espacio</b>: ¡Habilidad Especial!
   </div>
 
   <div class="top-bar-hud">
@@ -979,6 +1062,11 @@
         <div class="accum-bar-bg">
           <div id="hud-p1-bar" class="accum-bar-fill"></div>
         </div>
+        <div class="hud-special-row">
+          <span id="hud-p1-sp-name">HABILIDAD [E / ESPACIO]</span>
+          <div class="special-bar-bg"><div id="hud-p1-sp-fill" class="special-bar-fill"></div></div>
+          <span id="hud-p1-sp-tag" class="special-tag ready">¡LISTA!</span>
+        </div>
       </div>
     </div>
 
@@ -998,6 +1086,11 @@
         </div>
         <div class="accum-bar-bg">
           <div id="hud-ai-bar" class="accum-bar-fill"></div>
+        </div>
+        <div class="hud-special-row">
+          <span id="hud-ai-sp-name">HABILIDAD ESPECIAL</span>
+          <div class="special-bar-bg"><div id="hud-ai-sp-fill" class="special-bar-fill"></div></div>
+          <span id="hud-ai-sp-tag" class="special-tag ready">¡LISTA!</span>
         </div>
       </div>
     </div>
@@ -1099,10 +1192,378 @@ const RAW_KANTO = [
   [151,"Mew","Psíquico","",9,9,5]
 ];
 
+// ============================================================================
+// HABILIDADES ESPECIALES ÚNICAS SEGÚN EL TIPO DE POKÉMON
+// ============================================================================
+const POKEMON_SPECIAL_ABILITIES = {
+  "Eléctrico": {
+    name: "Rayo Fulgor",
+    icon: "⚡",
+    desc: "Dispara un rayo fulminante e invulnerable que electrocuta hacia adelante (+8% daño)",
+    action: (self, opponent) => {
+      self.invincibleTimer = 30;
+      self.vx = self.facing * 18;
+      spawnRingParticles(self.x, self.y, "#ffeb3b", 24);
+      spawnFloatingText(self.x, self.y - 40, "¡RAYO FULGOR!", "#ffeb3b", 20);
+      playSfx("criticalLaunch");
+      projectiles.push({
+        x: self.x + self.facing * 35,
+        y: self.y,
+        vx: self.facing * 15,
+        vy: 0,
+        radius: 30,
+        color: "#ffeb3b",
+        glow: "#ffffff",
+        damage: 8,
+        kb: 11,
+        owner: self,
+        life: 50,
+        type: "beam"
+      });
+    }
+  },
+  "Fuego": {
+    name: "Llamarada Ígnea",
+    icon: "🔥",
+    desc: "Lanza una gran esfera ígnea llameante que avanza y quema al rival (+10% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#ff5722", 22);
+      spawnFloatingText(self.x, self.y - 40, "¡LLAMARADA!", "#ff5722", 20);
+      playSfx("strongHit");
+      projectiles.push({
+        x: self.x + self.facing * 38,
+        y: self.y,
+        vx: self.facing * 10,
+        vy: 0,
+        radius: 36,
+        color: "#ff5722",
+        glow: "#ffee58",
+        damage: 10,
+        kb: 13,
+        owner: self,
+        life: 75,
+        type: "fireball"
+      });
+    }
+  },
+  "Agua": {
+    name: "Hidrobomba Gigante",
+    icon: "💧",
+    desc: "Dispara un torrente de agua a alta presión que empuja con fuerza hacia fuera (+7% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#2196f3", 24);
+      spawnFloatingText(self.x, self.y - 40, "¡HIDROBOMBA!", "#2196f3", 20);
+      playSfx("criticalLaunch");
+      for (let i = 0; i < 3; i++) {
+        projectiles.push({
+          x: self.x + self.facing * (30 + i * 22),
+          y: self.y + (i - 1) * 10,
+          vx: self.facing * (12 + i * 1.5),
+          vy: (i - 1) * 0.9,
+          radius: 26,
+          color: "#00b0ff",
+          glow: "#e1f5fe",
+          damage: 5,
+          kb: 14,
+          owner: self,
+          life: 55,
+          type: "water"
+        });
+      }
+    }
+  },
+  "Planta": {
+    name: "Drenadoras Esporas",
+    icon: "🌿",
+    desc: "Lanza esporas que dañan al rival (+7%) y drenan/curan un -10% de tu daño",
+    action: (self, opponent) => {
+      self.damagePct = Math.max(0, self.damagePct - 10);
+      spawnRingParticles(self.x, self.y, "#00e676", 28);
+      spawnFloatingText(self.x, self.y - 40, "¡DRENADORAS! (-10% DAÑO)", "#00e676", 20);
+      playSfx("win");
+      projectiles.push({
+        x: self.x + self.facing * 32,
+        y: self.y,
+        vx: self.facing * 8.5,
+        vy: 0,
+        radius: 30,
+        color: "#4caf50",
+        glow: "#b9f6ca",
+        damage: 7,
+        kb: 8,
+        owner: self,
+        life: 70,
+        type: "leaf"
+      });
+    }
+  },
+  "Psíquico": {
+    name: "Onda Telequinética",
+    icon: "🔮",
+    desc: "Onda gravitatoria que levanta al rival y salva al usuario de caídas al vacío",
+    action: (self, opponent) => {
+      self.vy = -16;
+      spawnRingParticles(self.x, self.y, "#e91e63", 30);
+      spawnFloatingText(self.x, self.y - 40, "¡ONDA PSÍQUICA!", "#e91e63", 20);
+      playSfx("boostJump");
+      const dx = opponent.x - self.x;
+      if (Math.abs(dx) < 240) {
+        opponent.vy = -17;
+        opponent.vx = self.facing * 10;
+        opponent.damagePct += 8;
+        opponent.hitstunTimer = 42;
+        spawnParticles(opponent.x, opponent.y, "#e91e63", 22, 6);
+      }
+    }
+  },
+  "Hielo": {
+    name: "Ventisca Congelante",
+    icon: "❄️",
+    desc: "Dispara un vendaval de escarcha que congela y ralentiza al rival al 50% (+7% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#00e5ff", 26);
+      spawnFloatingText(self.x, self.y - 40, "¡VENTISCA HELADA!", "#00e5ff", 20);
+      playSfx("strongHit");
+      projectiles.push({
+        x: self.x + self.facing * 32,
+        y: self.y,
+        vx: self.facing * 9.5,
+        vy: 0,
+        radius: 32,
+        color: "#80d8ff",
+        glow: "#ffffff",
+        damage: 7,
+        kb: 7,
+        owner: self,
+        life: 65,
+        type: "ice",
+        onHit: (def) => {
+          def.isFrozen = 170; // ~2.8 segundos congelado/ralentizado
+          spawnFloatingText(def.x, def.y - 35, "¡CONGELADO!", "#00e5ff", 18);
+        }
+      });
+    }
+  },
+  "Lucha": {
+    name: "Ultra Golpe Sísmico",
+    icon: "🥊",
+    desc: "Embestida contundente a corta distancia con daño brutal e hiperarmadura (+14% daño)",
+    action: (self, opponent) => {
+      self.invincibleTimer = 32;
+      self.vx = self.facing * 14;
+      spawnRingParticles(self.x, self.y, "#ff3d00", 25);
+      spawnFloatingText(self.x, self.y - 40, "¡ULTRA GOLPE!", "#ff3d00", 22);
+      playSfx("strongHit");
+      projectiles.push({
+        x: self.x + self.facing * 40,
+        y: self.y,
+        vx: self.facing * 14,
+        vy: 0,
+        radius: 40,
+        color: "#ff3d00",
+        glow: "#ffd180",
+        damage: 14,
+        kb: 16,
+        owner: self,
+        life: 25,
+        type: "fist"
+      });
+    }
+  },
+  "Fantasma": {
+    name: "Paso Espectral",
+    icon: "👻",
+    desc: "Se desvanece y se teleporta instantáneamente a la espalda del rival con un zarpazo",
+    action: (self, opponent) => {
+      spawnParticles(self.x, self.y, "#7e57c2", 20, 5);
+      self.x = opponent.x - opponent.facing * 75;
+      self.y = opponent.y - 12;
+      self.facing = opponent.facing;
+      self.invincibleTimer = 40;
+      spawnRingParticles(self.x, self.y, "#7e57c2", 25);
+      spawnFloatingText(self.x, self.y - 40, "¡PASO SOMBRÍO!", "#b388ff", 20);
+      playSfx("criticalLaunch");
+      opponent.damagePct += 8;
+      opponent.hitstunTimer = 38;
+      opponent.vx = self.facing * 12;
+      opponent.vy = -7;
+    }
+  },
+  "Dragón": {
+    name: "Cometa Dracónico",
+    icon: "🐉",
+    desc: "Invoca un meteoro celestial que cae en diagonal sobre la zona (+12% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#7c4dff", 26);
+      spawnFloatingText(self.x, self.y - 40, "¡METEORO DRAGÓN!", "#b388ff", 20);
+      playSfx("criticalLaunch");
+      projectiles.push({
+        x: opponent.x + (Math.random() - 0.5) * 60,
+        y: -30,
+        vx: self.facing * 3,
+        vy: 14,
+        radius: 38,
+        color: "#7c4dff",
+        glow: "#ea80fc",
+        damage: 12,
+        kb: 15,
+        owner: self,
+        life: 70,
+        type: "meteor"
+      });
+    }
+  },
+  "Roca": {
+    name: "Lluvia de Rocas",
+    icon: "🪨",
+    desc: "Provoca una avalancha de piedras que caen desde el cielo (+9% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#8d6e63", 20);
+      spawnFloatingText(self.x, self.y - 40, "¡AVALANCHA!", "#bcaaa4", 20);
+      playSfx("strongHit");
+      for (let i = 0; i < 3; i++) {
+        projectiles.push({
+          x: opponent.x + (i - 1) * 65,
+          y: -20 - i * 35,
+          vx: (i - 1) * 1.5,
+          vy: 12,
+          radius: 22,
+          color: "#8d6e63",
+          glow: "#d7ccc8",
+          damage: 5,
+          kb: 9,
+          owner: self,
+          life: 80,
+          type: "rock"
+        });
+      }
+    }
+  },
+  "Tierra": {
+    name: "Terremoto Sísmico",
+    icon: "⛰️",
+    desc: "Estremece el suelo de la plataforma levantando a los rivales (+9% daño)",
+    action: (self, opponent) => {
+      screenShake = 18;
+      spawnRingParticles(self.x, STAGE.mainPlatform.y, "#a1887f", 30);
+      spawnFloatingText(self.x, self.y - 40, "¡TERREMOTO!", "#d7ccc8", 20);
+      playSfx("strongHit");
+      if (opponent.onGround && Math.abs(opponent.y - self.y) < 60) {
+        opponent.vy = -18;
+        opponent.vx = (opponent.x - self.x > 0 ? 1 : -1) * 9;
+        opponent.damagePct += 9;
+        opponent.hitstunTimer = 42;
+        spawnParticles(opponent.x, opponent.y, "#8d6e63", 22, 7);
+      }
+    }
+  },
+  "Veneno": {
+    name: "Bomba Lodo Tóxica",
+    icon: "☠️",
+    desc: "Dispara una densa nube viscosa que envenena y frena al rival (+8% daño)",
+    action: (self, opponent) => {
+      spawnRingParticles(self.x, self.y, "#ab47bc", 22);
+      spawnFloatingText(self.x, self.y - 40, "¡BOMBA LODO!", "#e1bee7", 20);
+      playSfx("fastHit");
+      projectiles.push({
+        x: self.x + self.facing * 34,
+        y: self.y,
+        vx: self.facing * 8.5,
+        vy: -1,
+        radius: 30,
+        color: "#ab47bc",
+        glow: "#ce93d8",
+        damage: 8,
+        kb: 9,
+        owner: self,
+        life: 65,
+        type: "poison"
+      });
+    }
+  },
+  "Volador": {
+    name: "Vendaval Ciclón",
+    icon: "🌪️",
+    desc: "Crea un tornado ascendente que salva al usuario de caídas y eleva al rival (+7% daño)",
+    action: (self, opponent) => {
+      self.vy = -19; // Mega salto de recuperación aérea
+      self.airJumpsLeft = 2;
+      spawnRingParticles(self.x, self.y, "#81d4fa", 28);
+      spawnFloatingText(self.x, self.y - 40, "¡VENDAVAL!", "#b3e5fc", 20);
+      playSfx("boostJump");
+      projectiles.push({
+        x: self.x + self.facing * 30,
+        y: self.y,
+        vx: self.facing * 7.5,
+        vy: -4,
+        radius: 36,
+        color: "#81d4fa",
+        glow: "#ffffff",
+        damage: 7,
+        kb: 12,
+        owner: self,
+        life: 60,
+        type: "wind"
+      });
+    }
+  },
+  "Bicho": {
+    name: "Tijera X Cortante",
+    icon: "✂️",
+    desc: "Ráfaga de cuchilladas en cruz súper veloces con empuje cortante (+9% daño)",
+    action: (self, opponent) => {
+      self.vx = self.facing * 17;
+      spawnRingParticles(self.x, self.y, "#cddc39", 25);
+      spawnFloatingText(self.x, self.y - 40, "¡TIJERA X!", "#eeff41", 20);
+      playSfx("fastHit");
+      projectiles.push({
+        x: self.x + self.facing * 35,
+        y: self.y,
+        vx: self.facing * 15,
+        vy: 0,
+        radius: 34,
+        color: "#cddc39",
+        glow: "#f4ff81",
+        damage: 9,
+        kb: 11,
+        owner: self,
+        life: 30,
+        type: "slash"
+      });
+    }
+  },
+  "Normal": {
+    name: "Hiperrayo Destructor",
+    icon: "💥",
+    desc: "Dispara un haz de energía titánico horizontal que barre el escenario (+12% daño)",
+    action: (self, opponent) => {
+      screenShake = 16;
+      spawnRingParticles(self.x, self.y, "#fff", 30);
+      spawnFloatingText(self.x, self.y - 40, "¡HIPERRAYO!", "#fff59d", 22);
+      playSfx("criticalLaunch");
+      projectiles.push({
+        x: self.x + self.facing * 50,
+        y: self.y,
+        vx: self.facing * 18,
+        vy: 0,
+        radius: 42,
+        color: "#ffffff",
+        glow: "#ffeb3b",
+        damage: 12,
+        kb: 15,
+        owner: self,
+        life: 55,
+        type: "hyperbeam"
+      });
+    }
+  }
+};
+
 const KANTO_POKEMON = RAW_KANTO.map(item => {
   const [id, name, type1, type2, speed, attack, weight] = item;
   const color1 = TYPE_COLORS[type1] || "#ffffff";
   const color2 = TYPE_COLORS[type2] || color1;
+  const specialAbility = POKEMON_SPECIAL_ABILITIES[type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
   return {
     id,
     numStr: "#" + String(id).padStart(3, "0"),
@@ -1114,6 +1575,7 @@ const KANTO_POKEMON = RAW_KANTO.map(item => {
     weight,
     color1,
     color2,
+    specialAbility,
     spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
   };
 });
@@ -1442,6 +1904,11 @@ function updatePreviewCards() {
   document.getElementById("p1-stat-atk").style.width = (selectedP1.attack * 10) + "%";
   document.getElementById("p1-stat-wgt").style.width = (selectedP1.weight * 10) + "%";
 
+  const p1Ab = selectedP1.specialAbility || POKEMON_SPECIAL_ABILITIES[selectedP1.type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
+  document.getElementById("p1-special-icon").textContent = p1Ab.icon;
+  document.getElementById("p1-special-name").textContent = p1Ab.name;
+  document.getElementById("p1-special-desc").textContent = p1Ab.desc;
+
   // AI
   const aiImg = document.getElementById("ai-preview-img");
   aiImg.onerror = () => { aiImg.src = createFallbackDataUrl(selectedAI); };
@@ -1453,6 +1920,11 @@ function updatePreviewCards() {
   document.getElementById("ai-stat-spd").style.width = (selectedAI.speed * 10) + "%";
   document.getElementById("ai-stat-atk").style.width = (selectedAI.attack * 10) + "%";
   document.getElementById("ai-stat-wgt").style.width = (selectedAI.weight * 10) + "%";
+
+  const aiAb = selectedAI.specialAbility || POKEMON_SPECIAL_ABILITIES[selectedAI.type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
+  document.getElementById("ai-special-icon").textContent = aiAb.icon;
+  document.getElementById("ai-special-name").textContent = aiAb.name;
+  document.getElementById("ai-special-desc").textContent = aiAb.desc;
 }
 
 function renderRoster() {
@@ -1585,6 +2057,11 @@ class Fighter {
     this.airJumpsLeft = 1;
     this.boostedJumpActive = false;
 
+    // Habilidad especial única de tipo
+    this.specialCooldown = 0;
+    this.maxSpecialCooldown = 320; // ~5.3 segundos de recarga
+    this.isFrozen = 0; // Efecto de congelación por tipo Hielo
+
     // Combate
     this.attackState = null; // null | { type: 'fast'|'strong', timer, duration, hitDealt }
     this.attackCooldown = 0;
@@ -1608,6 +2085,18 @@ class Fighter {
     this.invincibleTimer = 110;
     this.airJumpsLeft = 1;
     this.boostedJumpActive = false;
+    this.specialCooldown = 0;
+    this.isFrozen = 0;
+  }
+
+  useSpecial(opponent) {
+    if (this.hitstunTimer > 0 || this.respawnTimer > 0 || this.specialCooldown > 0) return;
+    const ability = this.poke.specialAbility || POKEMON_SPECIAL_ABILITIES[this.poke.type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
+    if (!ability) return;
+
+    this.specialCooldown = this.maxSpecialCooldown;
+    ability.action(this, opponent);
+    updateHudElements();
   }
 
   performJump(isDoubleTapW) {
@@ -1737,6 +2226,11 @@ window.addEventListener("keydown", (e) => {
       playerFighter.performDropThrough();
     }
   }
+
+  // Tecla E o Espacio para Habilidad Especial Única
+  if ((k === "e" || k === " ") && !e.repeat) {
+    playerFighter.useSpecial(aiFighter);
+  }
 });
 
 window.addEventListener("keyup", (e) => {
@@ -1756,6 +2250,9 @@ canvas.addEventListener("mousedown", (e) => {
   } else if (e.button === 2) {
     // Click derecho: Ataque fuerte
     playerFighter.startAttack("strong");
+  } else if (e.button === 1) {
+    // Botón central del ratón: Habilidad Especial
+    playerFighter.useSpecial(aiFighter);
   }
 });
 
@@ -1848,11 +2345,62 @@ function updateAIFighter(ai, target) {
       ai.attackCooldown += cfg.attackCooldownBonus;
     }
   }
+
+  // La IA usa su Habilidad Especial de tipo tácticamente
+  if (ai.specialCooldown <= 0 && !ai.attackState) {
+    const isFalling = ai.y > STAGE.mainPlatform.y + 10;
+    const inRange = dist < 260;
+    const triggerChance = aiDifficulty === "hard" ? 0.08 : (aiDifficulty === "medium" ? 0.035 : 0.012);
+    if ((isFalling || inRange) && Math.random() < triggerChance) {
+      ai.useSpecial(target);
+    }
+  }
 }
 
 // ============================================================================
-// 8. FÍSICA, ACUMULACIÓN DE DAÑO Y LANZAMIENTO CRÍTICO (SMASH BRAWL)
+// 8. FÍSICA, PROYECTILES, ACUMULACIÓN DE DAÑO Y LANZAMIENTO CRÍTICO
 // ============================================================================
+function updateProjectiles() {
+  for (let i = projectiles.length - 1; i >= 0; i--) {
+    const proj = projectiles[i];
+    proj.x += proj.vx;
+    proj.y += proj.vy;
+    proj.life--;
+
+    if (Math.random() < 0.4) {
+      spawnParticles(proj.x, proj.y, proj.color, 1, 1);
+    }
+
+    const target = (proj.owner === playerFighter) ? aiFighter : playerFighter;
+    if (target && target.respawnTimer <= 0 && target.invincibleTimer <= 0) {
+      const dist = Math.hypot(proj.x - target.x, proj.y - target.y);
+      if (dist < proj.radius + target.w * 0.45) {
+        target.damagePct = Math.min(999, target.damagePct + proj.damage);
+        const launchDir = proj.vx !== 0 ? (proj.vx > 0 ? 1 : -1) : proj.owner.facing;
+        target.vx = launchDir * (proj.kb + target.damagePct * 0.08);
+        target.vy = -Math.abs(proj.kb * 0.65);
+        target.hitstunTimer = 34;
+        target.onGround = false;
+
+        if (proj.onHit) proj.onHit(target);
+
+        playSfx("strongHit");
+        screenShake = 12;
+        spawnParticles(target.x, target.y, proj.color, 24, 7);
+        spawnFloatingText(target.x, target.y - 35, `+${proj.damage}%`, proj.color, 18);
+
+        projectiles.splice(i, 1);
+        updateHudElements();
+        continue;
+      }
+    }
+
+    if (proj.life <= 0 || proj.x < -300 || proj.x > VIRTUAL_W + 300 || proj.y > VIRTUAL_H + 300) {
+      projectiles.splice(i, 1);
+    }
+  }
+}
+
 function updateFighterPhysics(f, opponent) {
   if (f.respawnTimer > 0) {
     f.respawnTimer--;
@@ -1865,6 +2413,8 @@ function updateFighterPhysics(f, opponent) {
   if (f.invincibleTimer > 0) f.invincibleTimer--;
   if (f.attackCooldown > 0) f.attackCooldown--;
   if (f.dropThroughTimer > 0) f.dropThroughTimer--;
+  if (f.specialCooldown > 0) f.specialCooldown--;
+  if (f.isFrozen > 0) f.isFrozen--;
 
   if (f.hitstunTimer > 0) {
     f.hitstunTimer--;
@@ -1886,7 +2436,8 @@ function updateFighterPhysics(f, opponent) {
     }
 
     const speedMult = f.crouching ? 0.45 : 1.0;
-    const targetVx = moveDir * f.moveSpeed * speedMult;
+    const freezeMult = f.isFrozen > 0 ? 0.48 : 1.0;
+    const targetVx = moveDir * f.moveSpeed * speedMult * freezeMult;
     const accel = f.onGround ? 0.32 : 0.16;
     f.vx += (targetVx - f.vx) * accel;
   } else if (f.hitstunTimer > 0) {
@@ -2149,6 +2700,32 @@ function updateHudElements() {
   document.getElementById("hud-ai-danger").classList.toggle("active", aiFighter.damagePct >= 100);
   renderStocks("hud-ai-stocks", aiFighter.lives);
 
+  // P1 Special Ability HUD
+  const p1SpPct = Math.min(100, Math.floor(((playerFighter.maxSpecialCooldown - playerFighter.specialCooldown) / playerFighter.maxSpecialCooldown) * 100));
+  const p1SpReady = playerFighter.specialCooldown <= 0;
+  const p1Ab = playerFighter.poke.specialAbility || POKEMON_SPECIAL_ABILITIES[playerFighter.poke.type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
+  const p1SpNameEl = document.getElementById("hud-p1-sp-name");
+  if (p1SpNameEl && p1Ab) {
+    p1SpNameEl.textContent = `${p1Ab.icon} ${p1Ab.name.toUpperCase()} [E]`;
+  }
+  document.getElementById("hud-p1-sp-fill").style.width = `${p1SpPct}%`;
+  const p1SpTag = document.getElementById("hud-p1-sp-tag");
+  p1SpTag.textContent = p1SpReady ? "¡LISTA! (E)" : `${Math.ceil(playerFighter.specialCooldown / 60)}s`;
+  p1SpTag.className = "special-tag " + (p1SpReady ? "ready" : "cooldown");
+
+  // AI Special Ability HUD
+  const aiSpPct = Math.min(100, Math.floor(((aiFighter.maxSpecialCooldown - aiFighter.specialCooldown) / aiFighter.maxSpecialCooldown) * 100));
+  const aiSpReady = aiFighter.specialCooldown <= 0;
+  const aiAb = aiFighter.poke.specialAbility || POKEMON_SPECIAL_ABILITIES[aiFighter.poke.type1] || POKEMON_SPECIAL_ABILITIES["Normal"];
+  const aiSpNameEl = document.getElementById("hud-ai-sp-name");
+  if (aiSpNameEl && aiAb) {
+    aiSpNameEl.textContent = `${aiAb.icon} ${aiAb.name.toUpperCase()}`;
+  }
+  document.getElementById("hud-ai-sp-fill").style.width = `${aiSpPct}%`;
+  const aiSpTag = document.getElementById("hud-ai-sp-tag");
+  aiSpTag.textContent = aiSpReady ? "¡LISTA!" : `${Math.ceil(aiFighter.specialCooldown / 60)}s`;
+  aiSpTag.className = "special-tag " + (aiSpReady ? "ready" : "cooldown");
+
   updateTimerDisplay();
 }
 
@@ -2307,6 +2884,22 @@ function drawBattleScene() {
     ctx.strokeRect(sp.x, sp.y, sp.w, sp.h);
   }
 
+  // 3.5 Dibujar Proyectiles de Habilidades Especiales
+  for (let i = 0; i < projectiles.length; i++) {
+    const proj = projectiles[i];
+    ctx.save();
+    ctx.translate(proj.x, proj.y);
+    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, proj.radius);
+    grad.addColorStop(0, proj.glow || "#ffffff");
+    grad.addColorStop(0.65, proj.color);
+    grad.addColorStop(1, "transparent");
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(0, 0, proj.radius, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
   // 4. Dibujar Luchadores
   if (playerFighter) drawFighter(playerFighter);
   if (aiFighter) drawFighter(aiFighter);
@@ -2432,6 +3025,19 @@ function drawFighter(f) {
     ctx.restore();
   }
 
+  // Efecto de congelación si está bajo Ventisca Helada
+  if (f.isFrozen > 0) {
+    ctx.save();
+    ctx.strokeStyle = "#00e5ff";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 36, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = "rgba(0, 229, 255, 0.22)";
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Dibujar el Sprite del Pokémon
   // Los sprites frontales miran ligeramente a la izquierda por defecto; los volteamos según dirección
   const scaleY = f.crouching ? 0.72 : 1.0;
@@ -2467,6 +3073,7 @@ function mainLoop(now) {
       updateFighterPhysics(playerFighter, aiFighter);
       updateAIFighter(aiFighter, playerFighter);
       updateFighterPhysics(aiFighter, playerFighter);
+      updateProjectiles();
     }
     drawBattleScene();
   } else if (gameState === "FINISHED") {
