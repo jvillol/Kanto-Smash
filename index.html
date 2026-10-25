@@ -1966,17 +1966,16 @@ function checkAttackHit(attacker, defender, attackType) {
 
   attacker.attackState.hitDealt = true;
 
-  // 1. Acumulación de daño:
-  // Ataque rápido llena menos (6% - 8%), ataque fuerte llena mucho más (18% - 24%)
+  // 1. Acumulación de daño (Ritmo ajustado para partidas más largas y tácticas):
+  // Ataque rápido llena menos (+2% a +4%), ataque fuerte llena más (+7% a +10%)
   const rawGain = attackType === "fast"
-    ? Math.round((6 + Math.random() * 2.5) * attacker.atkMultiplier)
-    : Math.round((18 + Math.random() * 5.5) * attacker.atkMultiplier);
+    ? Math.max(1, Math.round((2.2 + Math.random() * 1.6) * attacker.atkMultiplier))
+    : Math.max(3, Math.round((6.8 + Math.random() * 2.8) * attacker.atkMultiplier));
 
   defender.damagePct = Math.min(999, defender.damagePct + rawGain);
 
   // 2. Sistema de Probabilidad de Lanzamiento Fuera del Mapa al llegar al máximo (100%+)
   // Tal como pidió el usuario: "cuando llegue a un máximo tengas un % alto de que el golpe te mande disparado para fuera del mapa"
-  const accumRatio = defender.damagePct / 100; // 1.0 = 100% (Máximo de la barra)
   let isCriticalSmashLaunch = false;
 
   if (defender.damagePct >= 100) {
@@ -1990,8 +1989,8 @@ function checkAttackHit(attacker, defender, attackType) {
   }
 
   // 3. Calcular vector de lanzamiento (Knockback estilo Super Smash Bros Brawl)
-  let baseKb = attackType === "fast" ? 5.2 : 9.8;
-  let scalingKb = (defender.damagePct * (attackType === "fast" ? 0.085 : 0.165)) / defender.weightFactor;
+  let baseKb = attackType === "fast" ? 4.5 : 8.5;
+  let scalingKb = (defender.damagePct * (attackType === "fast" ? 0.075 : 0.145)) / defender.weightFactor;
   let totalLaunchSpeed = baseKb + scalingKb;
 
   if (isCriticalSmashLaunch) {

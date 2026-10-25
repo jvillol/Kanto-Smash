@@ -244,11 +244,11 @@ namespace KantoSmash
         {
             if (target.invincibilityTimer > 0f) return;
 
-            // 1. Acumulación de daño:
-            // Ataques rápidos llenan menos (6% - 9%); ataques fuertes llenan mucho más (18% - 25%)
+            // 1. Acumulación de daño más pausada (para alargar las partidas):
+            // Ataques rápidos llenan menos (2% - 4%); ataques fuertes llenan más (7% - 10%)
             float damageAdded = isStrongAttack
-                ? Random.Range(18f, 24f) * attackMultiplier
-                : Random.Range(6f, 9f) * attackMultiplier;
+                ? Random.Range(7f, 10f) * attackMultiplier
+                : Random.Range(2f, 4f) * attackMultiplier;
 
             target.damagePercentage = Mathf.Min(999f, target.damagePercentage + Mathf.Round(damageAdded));
 
@@ -264,8 +264,8 @@ namespace KantoSmash
             }
 
             // 3. Calcular fuerza de empuje (Knockback estilo Super Smash Bros Brawl)
-            float baseKnockback = isStrongAttack ? 11.5f : 6.0f;
-            float scaledKnockback = (target.damagePercentage * (isStrongAttack ? 0.18f : 0.09f)) / target.weightFactor;
+            float baseKnockback = isStrongAttack ? 8.5f : 4.5f;
+            float scaledKnockback = (target.damagePercentage * (isStrongAttack ? 0.145f : 0.075f)) / target.weightFactor;
             float finalLaunchForce = baseKnockback + scaledKnockback;
 
             if (criticalSmashLaunch)
