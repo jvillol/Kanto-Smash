@@ -1,0 +1,2329 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kanto Smash - Super Pokémon Brawl</title>
+<style>
+  :root {
+    --bg-dark: #0b0e17;
+    --panel-bg: rgba(18, 24, 41, 0.92);
+    --p1-color: #ff3b4e;
+    --p1-glow: rgba(255, 59, 78, 0.45);
+    --ai-color: #2ea8ff;
+    --ai-glow: rgba(46, 168, 255, 0.45);
+    --gold: #ffcc00;
+    --text: #f3f6ff;
+  }
+  * {
+    box-sizing: border-box;
+    user-select: none;
+    -webkit-user-drag: none;
+    margin: 0;
+    padding: 0;
+  }
+  body {
+    background: var(--bg-dark);
+    color: var(--text);
+    font-family: 'Segoe UI', Impact, Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+  }
+
+  /* ================= CHARACTER SELECT SCREEN ================= */
+  #select-screen {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(255, 59, 78, 0.16), transparent 45%),
+      radial-gradient(circle at 80% 20%, rgba(46, 168, 255, 0.16), transparent 45%),
+      linear-gradient(180deg, #0d1324 0%, #070a12 100%);
+    z-index: 20;
+    padding: 12px 22px;
+  }
+  #select-screen.hidden {
+    display: none;
+  }
+
+  .top-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(255,255,255,0.12);
+    gap: 14px;
+  }
+  .logo-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .smash-ball {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #ffeb3b, #ff3b4e 75%);
+    position: relative;
+    box-shadow: 0 0 18px rgba(255, 204, 0, 0.65);
+    flex-shrink: 0;
+  }
+  .smash-ball::before {
+    content: '';
+    position: absolute;
+    left: 26%;
+    top: 0;
+    width: 6px;
+    height: 100%;
+    background: #0b0e17;
+  }
+  .smash-ball::after {
+    content: '';
+    position: absolute;
+    top: 58%;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #0b0e17;
+  }
+  .logo-title h1 {
+    font-size: 28px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    background: linear-gradient(90deg, #ffffff, #ffd54f, #ff5252);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 16px rgba(255, 82, 82, 0.25);
+  }
+  .logo-subtitle {
+    font-size: 12px;
+    color: #9fb0d6;
+    font-weight: 600;
+    letter-spacing: 0.6px;
+  }
+
+  .filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .search-input {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    width: 190px;
+  }
+  .search-input:focus {
+    border-color: var(--gold);
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.3);
+  }
+  .type-select {
+    background: #172038;
+    border: 1px solid rgba(255,255,255,0.22);
+    color: #fff;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    outline: none;
+    cursor: pointer;
+  }
+
+  .selector-turn-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 8px 0;
+  }
+  .slot-pill {
+    padding: 7px 18px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: 13px;
+    letter-spacing: 0.8px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: all 0.18s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .slot-pill.p1 {
+    background: rgba(255, 59, 78, 0.16);
+    color: #ff9aa4;
+    border-color: rgba(255, 59, 78, 0.35);
+  }
+  .slot-pill.p1.active {
+    background: var(--p1-color);
+    color: #fff;
+    box-shadow: 0 0 18px var(--p1-glow);
+    transform: scale(1.04);
+  }
+  .slot-pill.ai {
+    background: rgba(46, 168, 255, 0.16);
+    color: #99d5ff;
+    border-color: rgba(46, 168, 255, 0.35);
+  }
+  .slot-pill.ai.active {
+    background: var(--ai-color);
+    color: #fff;
+    box-shadow: 0 0 18px var(--ai-glow);
+    transform: scale(1.04);
+  }
+
+  /* Roster Grid */
+  .roster-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    background: rgba(8, 12, 22, 0.72);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(84px, 1fr));
+    gap: 7px;
+    align-content: start;
+  }
+  .roster-container::-webkit-scrollbar {
+    width: 8px;
+  }
+  .roster-container::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.25);
+    border-radius: 4px;
+  }
+
+  .poke-card {
+    position: relative;
+    background: linear-gradient(160deg, #1b243b 0%, #101626 100%);
+    border: 2px solid rgba(255,255,255,0.12);
+    border-radius: 9px;
+    height: 88px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px;
+    cursor: pointer;
+    transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    overflow: hidden;
+  }
+  .poke-card:hover {
+    transform: translateY(-2px) scale(1.03);
+    border-color: rgba(255,255,255,0.5);
+  }
+  .poke-card.selected-p1 {
+    border-color: var(--p1-color);
+    box-shadow: 0 0 14px var(--p1-glow), inset 0 0 12px rgba(255, 59, 78, 0.25);
+  }
+  .poke-card.selected-ai {
+    border-color: var(--ai-color);
+    box-shadow: 0 0 14px var(--ai-glow), inset 0 0 12px rgba(46, 168, 255, 0.25);
+  }
+  .poke-card.selected-p1.selected-ai {
+    border-image: linear-gradient(90deg, var(--p1-color), var(--ai-color)) 1;
+    box-shadow: 0 0 16px rgba(255, 204, 0, 0.55);
+  }
+  .poke-card.random-card {
+    background: linear-gradient(135deg, #4a1c6d, #1f3a6d, #6d4c1c);
+    border-color: var(--gold);
+  }
+  .poke-num {
+    position: absolute;
+    top: 3px;
+    left: 5px;
+    font-size: 9px;
+    color: rgba(255,255,255,0.55);
+    font-weight: 700;
+  }
+  .poke-badges {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    display: flex;
+    gap: 2px;
+  }
+  .badge-tag {
+    font-size: 9px;
+    font-weight: 900;
+    padding: 1px 4px;
+    border-radius: 4px;
+    color: #fff;
+  }
+  .badge-tag.p1 { background: var(--p1-color); }
+  .badge-tag.ai { background: var(--ai-color); }
+
+  .poke-card img {
+    width: 54px;
+    height: 54px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    margin-top: 8px;
+    filter: drop-shadow(0 3px 4px rgba(0,0,0,0.65));
+  }
+  .random-icon {
+    font-size: 34px;
+    font-weight: 900;
+    color: var(--gold);
+    margin-top: 12px;
+    text-shadow: 0 0 12px rgba(255,204,0,0.8);
+  }
+  .poke-name {
+    font-size: 10px;
+    font-weight: 800;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: #e8eeff;
+    background: rgba(0,0,0,0.45);
+    border-radius: 4px;
+    padding: 1px 3px;
+  }
+
+  /* Bottom Fighter Dock & Confirm / Fight Controls */
+  .bottom-dock {
+    display: grid;
+    grid-template-columns: 1fr 310px 1fr;
+    gap: 14px;
+    margin-top: 10px;
+    min-height: 146px;
+    align-items: stretch;
+  }
+  .fighter-preview {
+    background: var(--panel-bg);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    position: relative;
+    overflow: hidden;
+  }
+  .fighter-preview.p1 {
+    border: 2px solid var(--p1-color);
+    box-shadow: 0 0 22px rgba(255, 59, 78, 0.2);
+  }
+  .fighter-preview.ai {
+    border: 2px solid var(--ai-color);
+    box-shadow: 0 0 22px rgba(46, 168, 255, 0.2);
+  }
+  .preview-avatar {
+    width: 96px;
+    height: 96px;
+    background: radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .preview-avatar img {
+    width: 88px;
+    height: 88px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 6px 8px rgba(0,0,0,0.7));
+  }
+  .preview-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .preview-role {
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .preview-role.p1 { color: var(--p1-color); }
+  .preview-role.ai { color: var(--ai-color); }
+  .preview-name {
+    font-size: 22px;
+    font-weight: 900;
+    color: #fff;
+  }
+  .preview-types {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 4px;
+  }
+  .type-pill {
+    font-size: 10px;
+    font-weight: 800;
+    padding: 2px 8px;
+    border-radius: 99px;
+    text-transform: uppercase;
+    color: #fff;
+    background: rgba(255,255,255,0.18);
+  }
+  .stat-bars {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+    font-size: 10px;
+    color: #b8c7e8;
+  }
+  .stat-box {
+    background: rgba(0,0,0,0.35);
+    padding: 3px 6px;
+    border-radius: 5px;
+  }
+  .stat-fill-bg {
+    height: 4px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 2px;
+    margin-top: 2px;
+    overflow: hidden;
+  }
+  .stat-fill {
+    height: 100%;
+    background: var(--gold);
+  }
+  .mini-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .btn-small {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-small:hover {
+    background: rgba(255,255,255,0.22);
+  }
+
+  .center-confirm-box {
+    background: var(--panel-bg);
+    border: 2px solid rgba(255, 204, 0, 0.35);
+    border-radius: 12px;
+    padding: 10px 14px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    text-align: center;
+  }
+  .controls-hint {
+    font-size: 11px;
+    color: #cbd5f0;
+    line-height: 1.35;
+  }
+  .controls-hint strong {
+    color: var(--gold);
+  }
+  .action-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+  }
+  .btn-confirm {
+    width: 100%;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: 2px solid #ffd54f;
+    background: rgba(255, 213, 79, 0.15);
+    color: #ffd54f;
+    transition: all 0.18s ease;
+  }
+  .btn-confirm.confirmed {
+    background: #2e7d32;
+    border-color: #66bb6a;
+    color: #fff;
+  }
+  .btn-fight {
+    width: 100%;
+    padding: 11px 16px;
+    border-radius: 9px;
+    font-size: 18px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    border: none;
+    background: linear-gradient(90deg, #ff3b4e, #ff9100, #ff3b4e);
+    background-size: 200% 100%;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 0 24px rgba(255, 59, 78, 0.65);
+    transition: all 0.2s ease;
+  }
+  .btn-fight:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    box-shadow: none;
+    filter: grayscale(0.7);
+  }
+  .btn-fight:not(:disabled):hover {
+    transform: scale(1.03);
+    box-shadow: 0 0 32px rgba(255, 145, 0, 0.9);
+  }
+
+  /* ================= IN-GAME HUD & CANVAS ================= */
+  #game-Canvas {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+  }
+
+  #battle-hud {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #battle-hud.hidden {
+    display: none;
+  }
+
+  .top-bar-hud {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 14px 24px;
+  }
+  .timer-box {
+    margin: 0 auto;
+    background: rgba(10, 14, 26, 0.85);
+    border: 2px solid rgba(255, 204, 0, 0.6);
+    border-radius: 12px;
+    padding: 6px 24px;
+    font-size: 34px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #fff;
+    text-shadow: 0 0 14px rgba(255, 204, 0, 0.6);
+    box-shadow: 0 6px 20px rgba(0,0,0,0.6);
+  }
+  .timer-box.urgent {
+    color: #ff4444;
+    border-color: #ff4444;
+    animation: pulseUrgent 0.6s infinite alternate;
+  }
+  @keyframes pulseUrgent {
+    from { transform: scale(1); }
+    to { transform: scale(1.07); }
+  }
+
+  .hud-controls-legend {
+    position: absolute;
+    top: 14px;
+    left: 20px;
+    background: rgba(10, 14, 26, 0.78);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #d6e0f5;
+    line-height: 1.45;
+  }
+  .hud-controls-legend b {
+    color: var(--gold);
+  }
+  .hud-top-buttons {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    display: flex;
+    gap: 8px;
+    pointer-events: auto;
+  }
+  .hud-btn {
+    background: rgba(15, 22, 38, 0.85);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: #fff;
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .hud-btn:hover {
+    background: rgba(255,255,255,0.18);
+  }
+
+  /* Bottom Smash Damage Cards */
+  .smash-cards-dock {
+    position: absolute;
+    bottom: 18px;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: center;
+    gap: 64px;
+  }
+  .smash-hud-card {
+    width: 330px;
+    background: linear-gradient(135deg, rgba(16, 22, 38, 0.94), rgba(8, 12, 22, 0.96));
+    border-radius: 14px;
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    box-shadow: 0 10px 28px rgba(0,0,0,0.7);
+    position: relative;
+  }
+  .smash-hud-card.p1 {
+    border: 3px solid var(--p1-color);
+  }
+  .smash-hud-card.ai {
+    border: 3px solid var(--ai-color);
+  }
+  .hud-portrait {
+    width: 68px;
+    height: 68px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .hud-portrait img {
+    width: 62px;
+    height: 62px;
+    image-rendering: pixelated;
+  }
+  .hud-details {
+    flex: 1;
+  }
+  .hud-name-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+    font-weight: 900;
+    text-transform: uppercase;
+  }
+  .stocks-row {
+    display: flex;
+    gap: 5px;
+    margin: 4px 0;
+  }
+  .stock-ball {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #ff3b4e 50%, #ffffff 50%);
+    border: 2px solid #111;
+    box-shadow: 0 0 6px rgba(255,255,255,0.5);
+  }
+  .stock-ball.lost {
+    opacity: 0.18;
+    filter: grayscale(1);
+  }
+  .damage-row {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+  }
+  .damage-percent {
+    font-size: 38px;
+    font-weight: 900;
+    font-family: Impact, 'Segoe UI Black', sans-serif;
+    letter-spacing: 1px;
+    text-shadow: 2px 3px 0px #000;
+  }
+  .danger-tag {
+    font-size: 10px;
+    font-weight: 900;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: #ff1744;
+    color: #fff;
+    display: none;
+    animation: pulseUrgent 0.35s infinite alternate;
+  }
+  .danger-tag.active {
+    display: inline-block;
+  }
+  .accum-bar-bg {
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.12);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 4px;
+  }
+  .accum-bar-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffee58, #ff7043, #d50000);
+    transition: width 0.15s ease;
+  }
+
+  /* ================= WINNER OVERLAY ================= */
+  #result-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(6, 9, 18, 0.86);
+    backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 30;
+  }
+  #result-overlay.hidden {
+    display: none;
+  }
+  .result-card {
+    background: linear-gradient(160deg, #161f36 0%, #0b101d 100%);
+    border: 3px solid var(--gold);
+    border-radius: 20px;
+    padding: 32px 44px;
+    text-align: center;
+    max-width: 540px;
+    width: 90%;
+    box-shadow: 0 0 50px rgba(255, 204, 0, 0.35);
+    animation: popIn 0.35s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+  }
+  @keyframes popIn {
+    from { transform: scale(0.7); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+  .result-banner {
+    font-size: 46px;
+    font-weight: 900;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-shadow: 0 4px 20px rgba(255, 204, 0, 0.6);
+  }
+  .result-subtitle {
+    font-size: 20px;
+    font-weight: 800;
+    color: #fff;
+    margin-top: 6px;
+  }
+  .result-reason {
+    font-size: 13px;
+    color: #9fb0d6;
+    margin-top: 4px;
+  }
+  .result-winner-sprite {
+    width: 130px;
+    height: 130px;
+    margin: 16px auto;
+    background: radial-gradient(circle, rgba(255,204,0,0.28) 0%, transparent 70%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .result-winner-sprite img {
+    width: 116px;
+    height: 116px;
+    image-rendering: pixelated;
+    filter: drop-shadow(0 8px 12px rgba(0,0,0,0.75));
+  }
+  .result-buttons {
+    display: flex;
+    gap: 14px;
+    justify-content: center;
+    margin-top: 20px;
+  }
+  .btn-result {
+    padding: 12px 22px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 900;
+    text-transform: uppercase;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.15s ease;
+  }
+  .btn-result:hover {
+    transform: scale(1.05);
+  }
+  .btn-rematch {
+    background: linear-gradient(90deg, #ff3b4e, #ff9100);
+    color: #fff;
+    box-shadow: 0 0 18px rgba(255, 59, 78, 0.5);
+  }
+  .btn-select {
+    background: #233152;
+    color: #fff;
+    border: 2px solid rgba(255,255,255,0.25);
+  }
+</style>
+</head>
+<body oncontextmenu="return false;">
+
+<!-- ================= CHARACTER SELECT SCREEN ================= -->
+<div id="select-screen">
+  <div class="top-header">
+    <div class="logo-title">
+      <div class="smash-ball"></div>
+      <div>
+        <h1>KANTO SMASH</h1>
+        <div class="logo-subtitle">151 POKÉMON DE KANTO • SUPER SMASH BROS BRAWL 2D</div>
+      </div>
+    </div>
+
+    <div class="selector-turn-bar">
+      <div id="slot-p1" class="slot-pill p1 active" onclick="setSelectingSlot('p1')">
+        <span>🎮 ELIGIENDO: JUGADOR 1 (TÚ)</span>
+      </div>
+      <div id="slot-ai" class="slot-pill ai" onclick="setSelectingSlot('ai')">
+        <span>🤖 ELIGIENDO: RIVAL (IA)</span>
+      </div>
+    </div>
+
+    <div class="filter-bar">
+      <input id="search-poke" class="search-input" type="text" placeholder="🔍 Buscar Pokémon (# o nombre)..." oninput="renderRoster()">
+      <select id="filter-type" class="type-select" onchange="renderRoster()">
+        <option value="ALL">Todos los Tipos (151)</option>
+        <option value="Fuego">Fuego</option>
+        <option value="Agua">Agua</option>
+        <option value="Planta">Planta</option>
+        <option value="Eléctrico">Eléctrico</option>
+        <option value="Psíquico">Psíquico</option>
+        <option value="Lucha">Lucha</option>
+        <option value="Dragón">Dragón</option>
+        <option value="Fantasma">Fantasma</option>
+        <option value="Hielo">Hielo</option>
+        <option value="Roca">Roca</option>
+        <option value="Tierra">Tierra</option>
+        <option value="Veneno">Veneno</option>
+        <option value="Volador">Volador</option>
+        <option value="Bicho">Bicho</option>
+        <option value="Normal">Normal</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Roster Grid (Random + 151 Kanto Pokémon) -->
+  <div id="roster-grid" class="roster-container"></div>
+
+  <!-- Bottom Preview Dock -->
+  <div class="bottom-dock">
+    <!-- Player 1 Card -->
+    <div class="fighter-preview p1" onclick="setSelectingSlot('p1')">
+      <div class="preview-avatar">
+        <img id="p1-preview-img" src="" alt="P1">
+      </div>
+      <div class="preview-info">
+        <div class="preview-role p1">JUGADOR 1 (TÚ) - AWSD + RATÓN</div>
+        <div id="p1-preview-name" class="preview-name">#025 Pikachu</div>
+        <div id="p1-preview-types" class="preview-types"></div>
+        <div class="stat-bars">
+          <div class="stat-box">VEL <div class="stat-fill-bg"><div id="p1-stat-spd" class="stat-fill"></div></div></div>
+          <div class="stat-box">ATQ <div class="stat-fill-bg"><div id="p1-stat-atk" class="stat-fill"></div></div></div>
+          <div class="stat-box">PESO <div class="stat-fill-bg"><div id="p1-stat-wgt" class="stat-fill"></div></div></div>
+        </div>
+      </div>
+      <div class="mini-actions">
+        <button class="btn-small" onclick="event.stopPropagation(); pickRandomFor('p1')">🎲 Al Azar</button>
+      </div>
+    </div>
+
+    <!-- Center Confirm & Fight -->
+    <div class="center-confirm-box">
+      <div class="controls-hint">
+        <strong>A / D</strong> Moverse • <strong>W</strong> Saltar (<strong>2x W</strong> Salto Potenciado)<br>
+        <strong>S</strong> Agacharse (<strong>2x S</strong> Bajar plataforma)<br>
+        <strong>Click Izq</strong> Ataque Rápido • <strong>Click Der</strong> Ataque Fuerte
+      </div>
+      <div class="action-buttons">
+        <button id="btn-confirm" class="btn-confirm" onclick="toggleConfirmSelection()">
+          ✓ CONFIRMAR PERSONAJES
+        </button>
+        <button id="btn-fight" class="btn-fight" disabled onclick="startMatch()">
+          ⚔️ ¡LUCHAR!
+        </button>
+      </div>
+    </div>
+
+    <!-- AI Rival Card -->
+    <div class="fighter-preview ai" onclick="setSelectingSlot('ai')">
+      <div class="preview-avatar">
+        <img id="ai-preview-img" src="" alt="AI">
+      </div>
+      <div class="preview-info">
+        <div class="preview-role ai">RIVAL (IA) - AUTOMÁTICO</div>
+        <div id="ai-preview-name" class="preview-name">#006 Charizard</div>
+        <div id="ai-preview-types" class="preview-types"></div>
+        <div class="stat-bars">
+          <div class="stat-box">VEL <div class="stat-fill-bg"><div id="ai-stat-spd" class="stat-fill"></div></div></div>
+          <div class="stat-box">ATQ <div class="stat-fill-bg"><div id="ai-stat-atk" class="stat-fill"></div></div></div>
+          <div class="stat-box">PESO <div class="stat-fill-bg"><div id="ai-stat-wgt" class="stat-fill"></div></div></div>
+        </div>
+      </div>
+      <div class="mini-actions">
+        <button class="btn-small" onclick="event.stopPropagation(); pickRandomFor('ai')">🎲 Al Azar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= GAME CANVAS ================= -->
+<canvas id="game-Canvas"></canvas>
+
+<!-- ================= IN-GAME HUD ================= -->
+<div id="battle-hud" class="hidden">
+  <div class="hud-controls-legend">
+    <b>A / D</b>: Izquierda / Derecha &nbsp;|&nbsp; <b>W</b>: Saltar (<b>W+W</b>: Salto Potenciado)<br>
+    <b>S</b>: Agacharse (<b>S+S</b>: Bajar de plataforma)<br>
+    <b>Click Izquierdo</b>: Ataque Rápido (+% bajo, veloz) &nbsp;|&nbsp; <b>Click Derecho</b>: Ataque Fuerte (+% alto, potente)
+  </div>
+
+  <div class="top-bar-hud">
+    <div id="hud-timer" class="timer-box">05:00</div>
+  </div>
+
+  <div class="hud-top-buttons">
+    <button id="btn-mute" class="hud-btn" onclick="toggleAudioMute()">🔊 Sonido: ON</button>
+    <button class="hud-btn" onclick="returnToCharacterSelect()">↩ Selección de Personajes</button>
+  </div>
+
+  <div class="smash-cards-dock">
+    <!-- P1 HUD -->
+    <div class="smash-hud-card p1">
+      <div class="hud-portrait">
+        <img id="hud-p1-img" src="" alt="P1">
+      </div>
+      <div class="hud-details">
+        <div class="hud-name-row">
+          <span id="hud-p1-name">PIKACHU (TÚ)</span>
+          <div id="hud-p1-stocks" class="stocks-row"></div>
+        </div>
+        <div class="damage-row">
+          <span id="hud-p1-pct" class="damage-percent">0%</span>
+          <span id="hud-p1-danger" class="danger-tag">¡PELIGRO KO!</span>
+        </div>
+        <div class="accum-bar-bg">
+          <div id="hud-p1-bar" class="accum-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI HUD -->
+    <div class="smash-hud-card ai">
+      <div class="hud-portrait">
+        <img id="hud-ai-img" src="" alt="AI">
+      </div>
+      <div class="hud-details">
+        <div class="hud-name-row">
+          <span id="hud-ai-name">CHARIZARD (IA)</span>
+          <div id="hud-ai-stocks" class="stocks-row"></div>
+        </div>
+        <div class="damage-row">
+          <span id="hud-ai-pct" class="damage-percent">0%</span>
+          <span id="hud-ai-danger" class="danger-tag">¡PELIGRO KO!</span>
+        </div>
+        <div class="accum-bar-bg">
+          <div id="hud-ai-bar" class="accum-bar-fill"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= RESULT OVERLAY ================= -->
+<div id="result-overlay" class="hidden">
+  <div class="result-card">
+    <div id="result-banner" class="result-banner">¡GANADOR!</div>
+    <div id="result-subtitle" class="result-subtitle">JUGADOR 1 - PIKACHU</div>
+    <div id="result-reason" class="result-reason">Victoria por KO</div>
+    <div class="result-winner-sprite">
+      <img id="result-img" src="" alt="Winner">
+    </div>
+    <div class="result-buttons">
+      <button class="btn-result btn-rematch" onclick="startMatch()">🔄 Volver a Jugar</button>
+      <button class="btn-result btn-select" onclick="returnToCharacterSelect()">📋 Selección de Personajes</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================================
+// 1. POKÉDEX COMPLETA DE KANTO (151 POKÉMON) + COLORES Y ATRIBUTOS
+// ============================================================================
+const TYPE_COLORS = {
+  "Planta": "#4caf50",
+  "Fuego": "#ff5722",
+  "Agua": "#2196f3",
+  "Eléctrico": "#ffeb3b",
+  "Psíquico": "#e91e63",
+  "Hielo": "#00bcd4",
+  "Dragón": "#673ab7",
+  "Fantasma": "#7e57c2",
+  "Lucha": "#d84315",
+  "Roca": "#8d6e63",
+  "Tierra": "#d4a359",
+  "Veneno": "#ab47bc",
+  "Volador": "#64b5f6",
+  "Bicho": "#8bc34a",
+  "Normal": "#9e9e9e",
+  "Acero": "#90a4ae",
+  "Hada": "#f48fb1"
+};
+
+// [id, name, primaryType, secondaryType, speedRating(1-10), attackRating(1-10), weightRating(1-10)]
+const RAW_KANTO = [
+  [1,"Bulbasaur","Planta","Veneno",5,5,5],[2,"Ivysaur","Planta","Veneno",6,6,6],[3,"Venusaur","Planta","Veneno",5,8,8],
+  [4,"Charmander","Fuego","",7,6,4],[5,"Charmeleon","Fuego","",7,7,5],[6,"Charizard","Fuego","Volador",8,9,7],
+  [7,"Squirtle","Agua","",5,5,5],[8,"Wartortle","Agua","",6,6,6],[9,"Blastoise","Agua","",5,8,9],
+  [10,"Caterpie","Bicho","",4,3,2],[11,"Metapod","Bicho","",3,3,4],[12,"Butterfree","Bicho","Volador",7,6,4],
+  [13,"Weedle","Bicho","Veneno",5,4,2],[14,"Kakuna","Bicho","Veneno",3,3,4],[15,"Beedrill","Bicho","Veneno",8,8,4],
+  [16,"Pidgey","Normal","Volador",6,4,3],[17,"Pidgeotto","Normal","Volador",7,6,5],[18,"Pidgeot","Normal","Volador",9,7,6],
+  [19,"Rattata","Normal","",8,5,3],[20,"Raticate","Normal","",8,7,5],[21,"Spearow","Normal","Volador",7,5,3],
+  [22,"Fearow","Normal","Volador",8,8,6],[23,"Ekans","Veneno","",6,5,4],[24,"Arbok","Veneno","",7,7,6],
+  [25,"Pikachu","Eléctrico","",9,7,4],[26,"Raichu","Eléctrico","",8,8,6],[27,"Sandshrew","Tierra","",5,6,5],
+  [28,"Sandslash","Tierra","",7,8,6],[29,"Nidoran♀","Veneno","",5,5,4],[30,"Nidorina","Veneno","",6,6,5],
+  [31,"Nidoqueen","Veneno","Tierra",6,8,8],[32,"Nidoran♂","Veneno","",6,5,4],[33,"Nidorino","Veneno","",6,7,5],
+  [34,"Nidoking","Veneno","Tierra",7,9,8],[35,"Clefairy","Normal","",4,5,4],[36,"Clefable","Normal","",5,7,6],
+  [37,"Vulpix","Fuego","",7,5,4],[38,"Ninetales","Fuego","",8,8,6],[39,"Jigglypuff","Normal","",4,4,3],
+  [40,"Wigglytuff","Normal","",5,7,5],[41,"Zubat","Veneno","Volador",7,4,3],[42,"Golbat","Veneno","Volador",8,7,6],
+  [43,"Oddish","Planta","Veneno",4,5,3],[44,"Gloom","Planta","Veneno",4,6,5],[45,"Vileplume","Planta","Veneno",5,8,6],
+  [46,"Paras","Bicho","Planta",3,6,4],[47,"Parasect","Bicho","Planta",4,8,6],[48,"Venonat","Bicho","Veneno",5,5,5],
+  [49,"Venomoth","Bicho","Veneno",8,7,5],[50,"Diglett","Tierra","",9,5,2],[51,"Dugtrio","Tierra","",10,8,5],
+  [52,"Meowth","Normal","",8,5,4],[53,"Persian","Normal","",9,7,6],[54,"Psyduck","Agua","",5,6,5],
+  [55,"Golduck","Agua","",8,8,7],[56,"Mankey","Lucha","",7,7,5],[57,"Primeape","Lucha","",8,9,6],
+  [58,"Growlithe","Fuego","",6,7,5],[59,"Arcanine","Fuego","",8,9,8],[60,"Poliwag","Agua","",8,5,4],
+  [61,"Poliwhirl","Agua","",8,6,5],[62,"Poliwrath","Agua","Lucha",6,8,8],[63,"Abra","Psíquico","",8,7,4],
+  [64,"Kadabra","Psíquico","",9,8,5],[65,"Alakazam","Psíquico","",10,9,5],[66,"Machop","Lucha","",4,7,5],
+  [67,"Machoke","Lucha","",5,8,7],[68,"Machamp","Lucha","",6,10,9],[69,"Bellsprout","Planta","Veneno",4,6,3],
+  [70,"Weepinbell","Planta","Veneno",5,7,4],[71,"Victreebel","Planta","Veneno",6,8,6],[72,"Tentacool","Agua","Veneno",6,5,5],
+  [73,"Tentacruel","Agua","Veneno",8,8,7],[74,"Geodude","Roca","Tierra",3,7,7],[75,"Graveler","Roca","Tierra",4,8,9],
+  [76,"Golem","Roca","Tierra",4,9,10],[77,"Ponyta","Fuego","",8,7,6],[78,"Rapidash","Fuego","",9,8,7],
+  [79,"Slowpoke","Agua","Psíquico",2,6,7],[80,"Slowbro","Agua","Psíquico",3,8,8],[81,"Magnemite","Eléctrico","",5,6,5],
+  [82,"Magneton","Eléctrico","",6,8,7],[83,"Farfetch'd","Normal","Volador",6,7,5],[84,"Doduo","Normal","Volador",7,7,5],
+  [85,"Dodrio","Normal","Volador",9,8,7],[86,"Seel","Agua","",5,5,7],[87,"Dewgong","Agua","Hielo",6,7,8],
+  [88,"Grimer","Veneno","",3,6,6],[89,"Muk","Veneno","",4,8,8],[90,"Shellder","Agua","",4,6,5],
+  [91,"Cloyster","Agua","Hielo",6,8,9],[92,"Gastly","Fantasma","Veneno",7,7,2],[93,"Haunter","Fantasma","Veneno",8,8,3],
+  [94,"Gengar","Fantasma","Veneno",9,9,5],[95,"Onix","Roca","Tierra",6,6,10],[96,"Drowzee","Psíquico","",4,5,6],
+  [97,"Hypno","Psíquico","",6,7,7],[98,"Krabby","Agua","",5,8,4],[99,"Kingler","Agua","",6,9,7],
+  [100,"Voltorb","Eléctrico","",9,5,4],[101,"Electrode","Eléctrico","",10,7,6],[102,"Exeggcute","Planta","Psíquico",4,5,4],
+  [103,"Exeggutor","Planta","Psíquico",5,9,9],[104,"Cubone","Tierra","",4,6,5],[105,"Marowak","Tierra","",5,8,6],
+  [106,"Hitmonlee","Lucha","",8,9,6],[107,"Hitmonchan","Lucha","",7,9,6],[108,"Lickitung","Normal","",3,6,7],
+  [109,"Koffing","Veneno","",4,6,4],[110,"Weezing","Veneno","",5,8,6],[111,"Rhyhorn","Tierra","Roca",3,7,9],
+  [112,"Rhydon","Tierra","Roca",4,9,10],[113,"Chansey","Normal","",5,4,7],[114,"Tangela","Planta","",5,7,6],
+  [115,"Kangaskhan","Normal","",7,8,8],[116,"Horsea","Agua","",6,5,3],[117,"Seadra","Agua","",7,7,5],
+  [118,"Goldeen","Agua","",6,6,5],[119,"Seaking","Agua","",6,8,6],[120,"Staryu","Agua","",8,6,5],
+  [121,"Starmie","Agua","Psíquico",9,8,7],[122,"Mr. Mime","Psíquico","",7,7,6],[123,"Scyther","Bicho","Volador",9,9,6],
+  [124,"Jynx","Hielo","Psíquico",8,8,5],[125,"Electabuzz","Eléctrico","",9,8,6],[126,"Magmar","Fuego","",8,8,6],
+  [127,"Pinsir","Bicho","",7,9,7],[128,"Tauros","Normal","",9,8,8],[129,"Magikarp","Agua","",7,2,3],
+  [130,"Gyarados","Agua","Volador",7,10,9],[131,"Lapras","Agua","Hielo",5,8,9],[132,"Ditto","Normal","",5,5,4],
+  [133,"Eevee","Normal","",6,5,4],[134,"Vaporeon","Agua","",6,8,7],[135,"Jolteon","Eléctrico","",10,8,5],
+  [136,"Flareon","Fuego","",6,9,6],[137,"Porygon","Normal","",5,7,6],[138,"Omanyte","Roca","Agua",4,6,5],
+  [139,"Omastar","Roca","Agua",5,8,7],[140,"Kabuto","Roca","Agua",5,6,5],[141,"Kabutops","Roca","Agua",7,9,6],
+  [142,"Aerodactyl","Roca","Volador",10,9,7],[143,"Snorlax","Normal","",3,9,10],[144,"Articuno","Hielo","Volador",7,9,8],
+  [145,"Zapdos","Eléctrico","Volador",9,9,7],[146,"Moltres","Fuego","Volador",8,9,8],[147,"Dratini","Dragón","",5,6,4],
+  [148,"Dragonair","Dragón","",7,7,5],[149,"Dragonite","Dragón","Volador",7,10,9],[150,"Mewtwo","Psíquico","",10,10,8],
+  [151,"Mew","Psíquico","",9,9,5]
+];
+
+const KANTO_POKEMON = RAW_KANTO.map(item => {
+  const [id, name, type1, type2, speed, attack, weight] = item;
+  const color1 = TYPE_COLORS[type1] || "#ffffff";
+  const color2 = TYPE_COLORS[type2] || color1;
+  return {
+    id,
+    numStr: "#" + String(id).padStart(3, "0"),
+    name,
+    type1,
+    type2,
+    speed,
+    attack,
+    weight,
+    color1,
+    color2,
+    spriteUrl: `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`
+  };
+});
+
+// ============================================================================
+// 2. GENERADOR DE SPRITES PROCEDURALES DE RESPALDO (PARA MODO OFFLINE)
+// ============================================================================
+const spriteCache = {};
+
+function createFallbackDataUrl(poke) {
+  const c = document.createElement("canvas");
+  c.width = 64;
+  c.height = 64;
+  const g = c.getContext("2d");
+
+  // Aura / cuerpo estilizado
+  const grad = g.createRadialGradient(32, 32, 6, 32, 32, 26);
+  grad.addColorStop(0, poke.color1);
+  grad.addColorStop(1, "#1a2238");
+  g.fillStyle = grad;
+  g.beginPath();
+  g.arc(32, 34, 22, 0, Math.PI * 2);
+  g.fill();
+  g.lineWidth = 3;
+  g.strokeStyle = "#ffffff";
+  g.stroke();
+
+  // Ojos estilo Pokémon
+  g.fillStyle = "#fff";
+  g.beginPath();
+  g.arc(24, 30, 5, 0, Math.PI * 2);
+  g.arc(40, 30, 5, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = "#111";
+  g.beginPath();
+  g.arc(25, 30, 2.5, 0, Math.PI * 2);
+  g.arc(41, 30, 2.5, 0, Math.PI * 2);
+  g.fill();
+
+  // Número
+  g.fillStyle = "#fff";
+  g.font = "bold 10px sans-serif";
+  g.textAlign = "center";
+  g.fillText(poke.numStr, 32, 50);
+  return c.toDataURL();
+}
+
+function getPokemonImage(poke) {
+  if (spriteCache[poke.id]) return spriteCache[poke.id];
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  const fallback = createFallbackDataUrl(poke);
+  img.onerror = () => {
+    if (img.src !== fallback) img.src = fallback;
+  };
+  img.src = poke.spriteUrl;
+  spriteCache[poke.id] = img;
+  return img;
+}
+
+// ============================================================================
+// 3. SISTEMA DE SONIDO SINTETIZADO (WEBAUDIO API)
+// ============================================================================
+let audioCtx = null;
+let audioMuted = false;
+
+function ensureAudio() {
+  if (!audioCtx) {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (AC) audioCtx = new AC();
+  }
+  if (audioCtx && audioCtx.state === "suspended") {
+    audioCtx.resume();
+  }
+}
+
+function toggleAudioMute() {
+  audioMuted = !audioMuted;
+  document.getElementById("btn-mute").textContent = audioMuted ? "🔇 Sonido: OFF" : "🔊 Sonido: ON";
+}
+
+function playSfx(type) {
+  if (audioMuted) return;
+  ensureAudio();
+  if (!audioCtx) return;
+
+  const now = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+
+  if (type === "select") {
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(520, now);
+    osc.frequency.exponentialRampToValueAtTime(780, now + 0.08);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  } else if (type === "confirm") {
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(440, now);
+    osc.frequency.setValueAtTime(660, now + 0.07);
+    osc.frequency.setValueAtTime(880, now + 0.14);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+    osc.start(now);
+    osc.stop(now + 0.25);
+  } else if (type === "jump") {
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(240, now);
+    osc.frequency.exponentialRampToValueAtTime(520, now + 0.14);
+    gain.gain.setValueAtTime(0.12, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.14);
+    osc.start(now);
+    osc.stop(now + 0.14);
+  } else if (type === "boostJump") {
+    osc.type = "triangle";
+    osc.frequency.setValueAtTime(320, now);
+    osc.frequency.exponentialRampToValueAtTime(920, now + 0.22);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.22);
+    osc.start(now);
+    osc.stop(now + 0.22);
+  } else if (type === "fastHit") {
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(290, now);
+    osc.frequency.exponentialRampToValueAtTime(110, now + 0.1);
+    gain.gain.setValueAtTime(0.18, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.1);
+    osc.start(now);
+    osc.stop(now + 0.1);
+  } else if (type === "strongHit") {
+    osc.type = "square";
+    osc.frequency.setValueAtTime(180, now);
+    osc.frequency.exponentialRampToValueAtTime(55, now + 0.24);
+    gain.gain.setValueAtTime(0.26, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.24);
+    osc.start(now);
+    osc.stop(now + 0.24);
+  } else if (type === "criticalLaunch") {
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(620, now);
+    osc.frequency.exponentialRampToValueAtTime(65, now + 0.42);
+    gain.gain.setValueAtTime(0.32, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.42);
+    osc.start(now);
+    osc.stop(now + 0.42);
+  } else if (type === "ko") {
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(150, now);
+    osc.frequency.exponentialRampToValueAtTime(32, now + 0.55);
+    gain.gain.setValueAtTime(0.34, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.55);
+    osc.start(now);
+    osc.stop(now + 0.55);
+  } else if (type === "win") {
+    const notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((freq, idx) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.type = "triangle";
+      o.frequency.setValueAtTime(freq, now + idx * 0.11);
+      g.gain.setValueAtTime(0.18, now + idx * 0.11);
+      g.gain.linearRampToValueAtTime(0.01, now + idx * 0.11 + 0.28);
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.start(now + idx * 0.11);
+      o.stop(now + idx * 0.11 + 0.28);
+    });
+  }
+}
+
+// ============================================================================
+// 4. ESTADO DE SELECCIÓN DE PERSONAJES
+// ============================================================================
+let selectingSlot = "p1"; // 'p1' or 'ai'
+let selectedP1 = KANTO_POKEMON[24]; // #025 Pikachu por defecto
+let selectedAI = KANTO_POKEMON[5];  // #006 Charizard por defecto
+let selectionConfirmed = false;
+
+function setSelectingSlot(slot) {
+  selectingSlot = slot;
+  document.getElementById("slot-p1").classList.toggle("active", slot === "p1");
+  document.getElementById("slot-ai").classList.toggle("active", slot === "ai");
+  playSfx("select");
+}
+
+function selectPokemonForCurrentSlot(poke) {
+  if (selectionConfirmed) {
+    unconfirmSelection();
+  }
+  if (selectingSlot === "p1") {
+    selectedP1 = poke;
+    // Cambia automáticamente al slot del rival si el usuario quiere fluidez
+    selectingSlot = "ai";
+    document.getElementById("slot-p1").classList.remove("active");
+    document.getElementById("slot-ai").classList.add("active");
+  } else {
+    selectedAI = poke;
+  }
+  playSfx("select");
+  updatePreviewCards();
+  renderRoster();
+}
+
+function pickRandomFor(slot) {
+  if (selectionConfirmed) unconfirmSelection();
+  const rnd = KANTO_POKEMON[Math.floor(Math.random() * KANTO_POKEMON.length)];
+  if (slot === "p1") selectedP1 = rnd;
+  else selectedAI = rnd;
+  playSfx("select");
+  updatePreviewCards();
+  renderRoster();
+}
+
+function pickRandomCurrentSlot() {
+  pickRandomFor(selectingSlot);
+  if (selectingSlot === "p1") {
+    setSelectingSlot("ai");
+  }
+}
+
+function toggleConfirmSelection() {
+  selectionConfirmed = !selectionConfirmed;
+  const btnConfirm = document.getElementById("btn-confirm");
+  const btnFight = document.getElementById("btn-fight");
+  if (selectionConfirmed) {
+    btnConfirm.classList.add("confirmed");
+    btnConfirm.textContent = "✓ SELECCIÓN CONFIRMADA (PULSA ¡LUCHAR!)";
+    btnFight.disabled = false;
+    playSfx("confirm");
+  } else {
+    unconfirmSelection();
+  }
+}
+
+function unconfirmSelection() {
+  selectionConfirmed = false;
+  const btnConfirm = document.getElementById("btn-confirm");
+  const btnFight = document.getElementById("btn-fight");
+  btnConfirm.classList.remove("confirmed");
+  btnConfirm.textContent = "✓ CONFIRMAR PERSONAJES";
+  btnFight.disabled = true;
+}
+
+function updatePreviewCards() {
+  // P1
+  const p1Img = document.getElementById("p1-preview-img");
+  p1Img.onerror = () => { p1Img.src = createFallbackDataUrl(selectedP1); };
+  p1Img.src = selectedP1.spriteUrl;
+  document.getElementById("p1-preview-name").textContent = `${selectedP1.numStr} ${selectedP1.name}`;
+  const p1Types = document.getElementById("p1-preview-types");
+  p1Types.innerHTML = `<span class="type-pill" style="background:${selectedP1.color1}">${selectedP1.type1}</span>` +
+    (selectedP1.type2 ? `<span class="type-pill" style="background:${selectedP1.color2}">${selectedP1.type2}</span>` : "");
+  document.getElementById("p1-stat-spd").style.width = (selectedP1.speed * 10) + "%";
+  document.getElementById("p1-stat-atk").style.width = (selectedP1.attack * 10) + "%";
+  document.getElementById("p1-stat-wgt").style.width = (selectedP1.weight * 10) + "%";
+
+  // AI
+  const aiImg = document.getElementById("ai-preview-img");
+  aiImg.onerror = () => { aiImg.src = createFallbackDataUrl(selectedAI); };
+  aiImg.src = selectedAI.spriteUrl;
+  document.getElementById("ai-preview-name").textContent = `${selectedAI.numStr} ${selectedAI.name}`;
+  const aiTypes = document.getElementById("ai-preview-types");
+  aiTypes.innerHTML = `<span class="type-pill" style="background:${selectedAI.color1}">${selectedAI.type1}</span>` +
+    (selectedAI.type2 ? `<span class="type-pill" style="background:${selectedAI.color2}">${selectedAI.type2}</span>` : "");
+  document.getElementById("ai-stat-spd").style.width = (selectedAI.speed * 10) + "%";
+  document.getElementById("ai-stat-atk").style.width = (selectedAI.attack * 10) + "%";
+  document.getElementById("ai-stat-wgt").style.width = (selectedAI.weight * 10) + "%";
+}
+
+function renderRoster() {
+  const grid = document.getElementById("roster-grid");
+  const query = document.getElementById("search-poke").value.trim().toLowerCase();
+  const typeFilter = document.getElementById("filter-type").value;
+
+  grid.innerHTML = "";
+
+  // Card #0: AL AZAR
+  const randomCard = document.createElement("div");
+  randomCard.className = "poke-card random-card";
+  randomCard.innerHTML = `
+    <span class="poke-num">???</span>
+    <div class="random-icon">?</div>
+    <div class="poke-name">AL AZAR</div>
+  `;
+  randomCard.onclick = () => pickRandomCurrentSlot();
+  grid.appendChild(randomCard);
+
+  KANTO_POKEMON.forEach(poke => {
+    if (query && !poke.name.toLowerCase().includes(query) && !poke.numStr.includes(query)) return;
+    if (typeFilter !== "ALL" && poke.type1 !== typeFilter && poke.type2 !== typeFilter) return;
+
+    const isP1 = selectedP1.id === poke.id;
+    const isAI = selectedAI.id === poke.id;
+
+    const card = document.createElement("div");
+    card.className = "poke-card" + (isP1 ? " selected-p1" : "") + (isAI ? " selected-ai" : "");
+
+    let badgesHtml = "";
+    if (isP1) badgesHtml += `<span class="badge-tag p1">J1</span>`;
+    if (isAI) badgesHtml += `<span class="badge-tag ai">IA</span>`;
+
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.alt = poke.name;
+    img.onerror = () => { img.src = createFallbackDataUrl(poke); };
+    img.src = poke.spriteUrl;
+
+    const numSpan = document.createElement("span");
+    numSpan.className = "poke-num";
+    numSpan.textContent = poke.numStr;
+
+    const badgeDiv = document.createElement("div");
+    badgeDiv.className = "poke-badges";
+    badgeDiv.innerHTML = badgesHtml;
+
+    const nameDiv = document.createElement("div");
+    nameDiv.className = "poke-name";
+    nameDiv.textContent = poke.name;
+
+    card.appendChild(numSpan);
+    card.appendChild(badgeDiv);
+    card.appendChild(img);
+    card.appendChild(nameDiv);
+
+    card.onclick = () => selectPokemonForCurrentSlot(poke);
+    grid.appendChild(card);
+  });
+}
+
+// ============================================================================
+// 5. MOTOR DE BATALLA 2D (ESTILO SUPER SMASH BROS BRAWL)
+// ============================================================================
+const canvas = document.getElementById("game-Canvas");
+const ctx = canvas.getContext("2d");
+
+const VIRTUAL_W = 1280;
+const VIRTUAL_H = 720;
+
+// Escenario: 1 plataforma grande principal + 3 plataformas pequeñas flotantes
+const STAGE = {
+  mainPlatform: { x: 260, y: 520, w: 760, h: 36, passThrough: false },
+  smallPlatforms: [
+    { x: 330, y: 380, w: 200, h: 16, passThrough: true }, // Izquierda
+    { x: 750, y: 380, w: 200, h: 16, passThrough: true }, // Derecha
+    { x: 530, y: 255, w: 220, h: 16, passThrough: true }  // Superior Central
+  ],
+  blastZone: {
+    left: -210,
+    right: VIRTUAL_W + 210,
+    top: -240,
+    bottom: VIRTUAL_H + 210
+  }
+};
+
+let gameState = "SELECT"; // SELECT, PLAYING, FINISHED
+let matchTimer = 300; // 5 minutos (300 segundos)
+let hitstopFrames = 0;
+let screenShake = 0;
+let particles = [];
+let floatingTexts = [];
+let projectiles = [];
+let announcement = { text: "", timer: 0, color: "#ffcc00" };
+
+// Estado de teclas del jugador
+const keys = { a: false, d: false, s: false, w: false };
+let lastWTapTime = 0;
+let lastSTapTime = 0;
+
+class Fighter {
+  constructor(poke, isAI, spawnX, spawnY, facing) {
+    this.poke = poke;
+    this.isAI = isAI;
+    this.sprite = getPokemonImage(poke);
+
+    this.x = spawnX;
+    this.y = spawnY;
+    this.w = 58;
+    this.h = 58;
+    this.vx = 0;
+    this.vy = 0;
+    this.facing = facing; // 1 = derecha, -1 = izquierda
+
+    // Estadísticas escaladas por el Pokémon de Kanto
+    this.moveSpeed = 5.4 + (poke.speed - 5) * 0.32;
+    this.jumpForce = -13.6;
+    this.boostJumpForce = -19.2; // Salto potenciado (W dos veces seguidas)
+    this.weightFactor = 0.82 + (poke.weight - 5) * 0.055; // Más peso = cuesta un poco más lanzarlo
+    this.atkMultiplier = 0.9 + (poke.attack - 5) * 0.04;
+
+    this.lives = 3;
+    this.damagePct = 0; // Acumulación de daño (0% a 300%+)
+
+    this.onGround = false;
+    this.currentPlatform = null;
+    this.crouching = false;
+    this.dropThroughTimer = 0; // Tiempo ignorando plataformas pequeñas tras S+S
+    this.airJumpsLeft = 1;
+    this.boostedJumpActive = false;
+
+    // Combate
+    this.attackState = null; // null | { type: 'fast'|'strong', timer, duration, hitDealt }
+    this.attackCooldown = 0;
+    this.hitstunTimer = 0;
+    this.invincibleTimer = 90; // Invencibilidad breve al aparecer
+    this.respawnTimer = 0;
+
+    // IA
+    this.aiDecisionTimer = 0;
+    this.aiAction = "chase";
+  }
+
+  respawn(spawnX, spawnY) {
+    this.x = spawnX;
+    this.y = spawnY;
+    this.vx = 0;
+    this.vy = 0;
+    this.damagePct = 0;
+    this.hitstunTimer = 0;
+    this.attackState = null;
+    this.invincibleTimer = 110;
+    this.airJumpsLeft = 1;
+    this.boostedJumpActive = false;
+  }
+
+  performJump(isDoubleTapW) {
+    if (this.hitstunTimer > 0 || this.respawnTimer > 0) return;
+
+    if (isDoubleTapW && (this.onGround || this.airJumpsLeft > 0)) {
+      // Salto potenciado (dos veces seguidas W)
+      this.vy = this.boostJumpForce;
+      if (!this.onGround) this.airJumpsLeft = 0;
+      this.onGround = false;
+      this.boostedJumpActive = true;
+      playSfx("boostJump");
+      spawnRingParticles(this.x, this.y + this.h / 2, "#00e5ff", 16);
+      spawnFloatingText(this.x, this.y - 25, "¡SALTO POTENCIADO!", "#00e5ff", 15);
+    } else if (this.onGround) {
+      this.vy = this.jumpForce;
+      this.onGround = false;
+      this.airJumpsLeft = 1;
+      this.boostedJumpActive = false;
+      playSfx("jump");
+      spawnRingParticles(this.x, this.y + this.h / 2, "#ffffff", 7);
+    } else if (this.airJumpsLeft > 0) {
+      this.vy = this.jumpForce * 0.95;
+      this.airJumpsLeft--;
+      playSfx("jump");
+      spawnRingParticles(this.x, this.y + this.h / 2, "#ffffff", 9);
+    }
+  }
+
+  performDropThrough() {
+    if (this.onGround && this.currentPlatform && this.currentPlatform.passThrough) {
+      this.dropThroughTimer = 16;
+      this.onGround = false;
+      this.y += 6;
+      this.vy = 3.5;
+    }
+  }
+
+  startAttack(type) {
+    if (this.hitstunTimer > 0 || this.attackState || this.attackCooldown > 0 || this.respawnTimer > 0) return;
+
+    if (type === "fast") {
+      // Ataque rápido (Click izquierdo): más veloz, llena menos la acumulación
+      this.attackState = {
+        type: "fast",
+        timer: 0,
+        startup: 3,
+        activeEnd: 11,
+        duration: 15,
+        hitDealt: false
+      };
+      this.vx += this.facing * 3.2;
+    } else {
+      // Ataque fuerte / Smash (Click derecho): más lento, llena mucho más la acumulación y lanza fuerte
+      this.attackState = {
+        type: "strong",
+        timer: 0,
+        startup: 11,
+        activeEnd: 22,
+        duration: 34,
+        hitDealt: false
+      };
+      this.vx *= 0.4;
+      spawnParticles(this.x + this.facing * 24, this.y, this.poke.color1, 10, 3);
+    }
+  }
+}
+
+let playerFighter = null;
+let aiFighter = null;
+
+function startMatch() {
+  ensureAudio();
+  document.getElementById("select-screen").classList.add("hidden");
+  document.getElementById("result-overlay").classList.add("hidden");
+  document.getElementById("battle-hud").classList.remove("hidden");
+
+  playerFighter = new Fighter(selectedP1, false, 440, 380, 1);
+  aiFighter = new Fighter(selectedAI, true, 840, 380, -1);
+
+  matchTimer = 300; // 5 minutos exactos
+  particles = [];
+  floatingTexts = [];
+  projectiles = [];
+  hitstopFrames = 0;
+  screenShake = 0;
+  gameState = "PLAYING";
+
+  announcement = { text: "¡LISTOS... A LUCHAR!", timer: 95, color: "#ffcc00" };
+  playSfx("confirm");
+  updateHudElements();
+}
+
+function returnToCharacterSelect() {
+  gameState = "SELECT";
+  document.getElementById("battle-hud").classList.add("hidden");
+  document.getElementById("result-overlay").classList.add("hidden");
+  document.getElementById("select-screen").classList.remove("hidden");
+  renderRoster();
+  updatePreviewCards();
+}
+
+// ============================================================================
+// 6. CONTROLES AWSD + RATÓN (CLICK IZQ = RÁPIDO, CLICK DER = FUERTE)
+// ============================================================================
+window.addEventListener("keydown", (e) => {
+  if (gameState !== "PLAYING" || !playerFighter) return;
+  const k = e.key.toLowerCase();
+
+  if (k === "a") keys.a = true;
+  if (k === "d") keys.d = true;
+
+  if (k === "w" && !e.repeat) {
+    keys.w = true;
+    const now = performance.now();
+    const isDoubleW = (now - lastWTapTime) <= 320;
+    lastWTapTime = now;
+    playerFighter.performJump(isDoubleW);
+  }
+
+  if (k === "s" && !e.repeat) {
+    keys.s = true;
+    const now = performance.now();
+    const isDoubleS = (now - lastSTapTime) <= 320;
+    lastSTapTime = now;
+    if (isDoubleS) {
+      playerFighter.performDropThrough();
+    }
+  }
+});
+
+window.addEventListener("keyup", (e) => {
+  const k = e.key.toLowerCase();
+  if (k === "a") keys.a = false;
+  if (k === "d") keys.d = false;
+  if (k === "w") keys.w = false;
+  if (k === "s") keys.s = false;
+});
+
+canvas.addEventListener("mousedown", (e) => {
+  if (gameState !== "PLAYING" || !playerFighter) return;
+  // Actualizar dirección hacia el cursor si el jugador hace click o mantener la dirección actual
+  if (e.button === 0) {
+    // Click izquierdo: Ataque rápido
+    playerFighter.startAttack("fast");
+  } else if (e.button === 2) {
+    // Click derecho: Ataque fuerte
+    playerFighter.startAttack("strong");
+  }
+});
+
+// ============================================================================
+// 7. INTELIGENCIA ARTIFICIAL DEL RIVAL (IA)
+// ============================================================================
+function updateAIFighter(ai, target) {
+  if (ai.respawnTimer > 0 || ai.hitstunTimer > 0) return;
+
+  const dx = target.x - ai.x;
+  const dy = target.y - ai.y;
+  const dist = Math.hypot(dx, dy);
+
+  // 1. Si la IA está fuera de la plataforma principal, prioridad absoluta: regresar al centro
+  const stageLeft = STAGE.mainPlatform.x + 40;
+  const stageRight = STAGE.mainPlatform.x + STAGE.mainPlatform.w - 40;
+
+  if (ai.x < stageLeft || ai.x > stageRight || ai.y > STAGE.mainPlatform.y + 20) {
+    const centerStageX = STAGE.mainPlatform.x + STAGE.mainPlatform.w / 2;
+    ai.facing = centerStageX > ai.x ? 1 : -1;
+    ai.vx += (ai.facing * ai.moveSpeed - ai.vx) * 0.25;
+    if (ai.vy > 1.5 && ai.y > 360) {
+      ai.performJump(true); // Usa salto potenciado para salvarse
+    }
+    return;
+  }
+
+  ai.aiDecisionTimer--;
+  if (ai.aiDecisionTimer <= 0) {
+    ai.aiDecisionTimer = 14 + Math.floor(Math.random() * 14);
+    if (dist < 95) {
+      ai.aiAction = Math.random() < 0.45 ? "attackStrong" : "attackFast";
+    } else {
+      ai.aiAction = "chase";
+    }
+  }
+
+  // Mirar hacia el jugador
+  if (Math.abs(dx) > 12 && !ai.attackState) {
+    ai.facing = dx > 0 ? 1 : -1;
+  }
+
+  // Movimiento horizontal hacia el jugador
+  if (Math.abs(dx) > 62) {
+    const targetVx = ai.facing * ai.moveSpeed * 0.92;
+    ai.vx += (targetVx - ai.vx) * 0.22;
+  } else {
+    ai.vx *= 0.8;
+  }
+
+  // Saltar a plataformas si el jugador está arriba
+  if (dy < -75 && ai.onGround && Math.random() < 0.08) {
+    ai.performJump(dy < -165); // Usa salto potenciado si el jugador está en la plataforma superior
+  }
+
+  // Bajar de plataforma si el jugador está debajo
+  if (dy > 75 && ai.onGround && ai.currentPlatform && ai.currentPlatform.passThrough && Math.random() < 0.08) {
+    ai.performDropThrough();
+  }
+
+  // Ejecutar ataques cuando está en rango
+  if (Math.abs(dx) < 92 && Math.abs(dy) < 62 && !ai.attackState && ai.attackCooldown <= 0) {
+    // Si el jugador tiene alta acumulación de daño (>=85%), la IA prioriza ataques fuertes para buscar el KO
+    const strongChance = target.damagePct >= 85 ? 0.58 : 0.30;
+    if (Math.random() < strongChance) {
+      ai.startAttack("strong");
+    } else {
+      ai.startAttack("fast");
+    }
+  }
+}
+
+// ============================================================================
+// 8. FÍSICA, ACUMULACIÓN DE DAÑO Y LANZAMIENTO CRÍTICO (SMASH BRAWL)
+// ============================================================================
+function updateFighterPhysics(f, opponent) {
+  if (f.respawnTimer > 0) {
+    f.respawnTimer--;
+    if (f.respawnTimer === 0) {
+      f.respawn(f.isAI ? 840 : 440, 220);
+    }
+    return;
+  }
+
+  if (f.invincibleTimer > 0) f.invincibleTimer--;
+  if (f.attackCooldown > 0) f.attackCooldown--;
+  if (f.dropThroughTimer > 0) f.dropThroughTimer--;
+
+  if (f.hitstunTimer > 0) {
+    f.hitstunTimer--;
+    // Estela de humo cuando sale disparado a gran velocidad (estilo Smash Bros)
+    if (Math.hypot(f.vx, f.vy) > 11 && f.hitstunTimer % 2 === 0) {
+      spawnParticles(f.x, f.y, "#e0e0e0", 2, 1.5);
+    }
+  }
+
+  // Controles del Jugador 1
+  if (!f.isAI && f.hitstunTimer <= 0) {
+    f.crouching = keys.s && f.onGround;
+    let moveDir = 0;
+    if (keys.a) moveDir -= 1;
+    if (keys.d) moveDir += 1;
+
+    if (moveDir !== 0 && !f.attackState) {
+      f.facing = moveDir;
+    }
+
+    const speedMult = f.crouching ? 0.45 : 1.0;
+    const targetVx = moveDir * f.moveSpeed * speedMult;
+    const accel = f.onGround ? 0.32 : 0.16;
+    f.vx += (targetVx - f.vx) * accel;
+  } else if (f.hitstunTimer > 0) {
+    // Resistencia del aire durante lanzamiento
+    f.vx *= 0.985;
+  }
+
+  // Gravedad
+  const gravity = f.hitstunTimer > 0 ? 0.48 : 0.62;
+  f.vy += gravity;
+  if (f.vy > 18) f.vy = 18;
+
+  const prevBottom = f.y + f.h / 2;
+  f.x += f.vx;
+  f.y += f.vy;
+  const newBottom = f.y + f.h / 2;
+
+  // Colisión con plataformas (solo al caer hacia abajo)
+  f.onGround = false;
+  f.currentPlatform = null;
+
+  if (f.vy >= 0) {
+    const allPlatforms = [STAGE.mainPlatform, ...STAGE.smallPlatforms];
+    for (const plat of allPlatforms) {
+      if (plat.passThrough && f.dropThroughTimer > 0) continue;
+
+      const withinX = (f.x + f.w * 0.35 > plat.x) && (f.x - f.w * 0.35 < plat.x + plat.w);
+      const crossedTop = (prevBottom <= plat.y + 10) && (newBottom >= plat.y);
+
+      if (withinX && crossedTop) {
+        f.y = plat.y - f.h / 2;
+        f.vy = 0;
+        f.onGround = true;
+        f.currentPlatform = plat;
+        f.airJumpsLeft = 1;
+        f.boostedJumpActive = false;
+        break;
+      }
+    }
+  }
+
+  // Procesar ataques activos
+  if (f.attackState) {
+    f.attackState.timer++;
+    const st = f.attackState;
+
+    if (st.timer >= st.startup && st.timer <= st.activeEnd && !st.hitDealt) {
+      checkAttackHit(f, opponent, st.type);
+    }
+
+    if (st.timer >= st.duration) {
+      f.attackCooldown = st.type === "fast" ? 5 : 14;
+      f.attackState = null;
+    }
+  }
+
+  // Comprobar Blast Zones (Fuera del mapa = Pierde 1 vida)
+  const bz = STAGE.blastZone;
+  if (f.x < bz.left || f.x > bz.right || f.y < bz.top || f.y > bz.bottom) {
+    handleFighterKO(f);
+  }
+}
+
+function checkAttackHit(attacker, defender, attackType) {
+  if (defender.respawnTimer > 0 || defender.invincibleTimer > 0) return;
+
+  const reach = attackType === "fast" ? 64 : 88;
+  const hitX = attacker.x + attacker.facing * (reach * 0.55);
+  const hitY = attacker.y;
+  const hitW = reach;
+  const hitH = attackType === "fast" ? 54 : 74;
+
+  const overlapX = Math.abs(hitX - defender.x) < (hitW / 2 + defender.w / 2);
+  const overlapY = Math.abs(hitY - defender.y) < (hitH / 2 + defender.h / 2);
+
+  if (!overlapX || !overlapY) return;
+
+  attacker.attackState.hitDealt = true;
+
+  // 1. Acumulación de daño:
+  // Ataque rápido llena menos (6% - 8%), ataque fuerte llena mucho más (18% - 24%)
+  const rawGain = attackType === "fast"
+    ? Math.round((6 + Math.random() * 2.5) * attacker.atkMultiplier)
+    : Math.round((18 + Math.random() * 5.5) * attacker.atkMultiplier);
+
+  defender.damagePct = Math.min(999, defender.damagePct + rawGain);
+
+  // 2. Sistema de Probabilidad de Lanzamiento Fuera del Mapa al llegar al máximo (100%+)
+  // Tal como pidió el usuario: "cuando llegue a un máximo tengas un % alto de que el golpe te mande disparado para fuera del mapa"
+  const accumRatio = defender.damagePct / 100; // 1.0 = 100% (Máximo de la barra)
+  let isCriticalSmashLaunch = false;
+
+  if (defender.damagePct >= 100) {
+    // Al llegar al 100%+, alta probabilidad de disparo crítico fuera del mapa
+    // Ataque fuerte tiene ~80%-95% de probabilidad; ataque rápido ~55%-78%
+    const baseProb = attackType === "strong" ? 0.80 : 0.55;
+    const bonusProb = Math.min(0.18, (defender.damagePct - 100) * 0.0025);
+    if (Math.random() < (baseProb + bonusProb)) {
+      isCriticalSmashLaunch = true;
+    }
+  }
+
+  // 3. Calcular vector de lanzamiento (Knockback estilo Super Smash Bros Brawl)
+  let baseKb = attackType === "fast" ? 5.2 : 9.8;
+  let scalingKb = (defender.damagePct * (attackType === "fast" ? 0.085 : 0.165)) / defender.weightFactor;
+  let totalLaunchSpeed = baseKb + scalingKb;
+
+  if (isCriticalSmashLaunch) {
+    // ¡Disparo explosivo fuera del mapa!
+    totalLaunchSpeed = Math.max(28, totalLaunchSpeed * 1.85);
+    hitstopFrames = 11;
+    screenShake = 18;
+    playSfx("criticalLaunch");
+    spawnParticles(defender.x, defender.y, "#ff1744", 34, 8);
+    spawnParticles(defender.x, defender.y, "#ffee58", 20, 6);
+    spawnFloatingText(defender.x, defender.y - 45, `¡SMASH CRÍTICO! +${rawGain}%`, "#ff1744", 22);
+  } else {
+    hitstopFrames = attackType === "strong" ? 6 : 3;
+    screenShake = attackType === "strong" ? 9 : 4;
+    playSfx(attackType === "strong" ? "strongHit" : "fastHit");
+    spawnParticles(defender.x, defender.y, attacker.poke.color1, attackType === "strong" ? 20 : 10, 5);
+    spawnFloatingText(
+      defender.x,
+      defender.y - 35,
+      `+${rawGain}%`,
+      attackType === "strong" ? "#ff9100" : "#ffffff",
+      attackType === "strong" ? 18 : 14
+    );
+  }
+
+  const crouchArmor = defender.crouching ? 0.78 : 1.0;
+  const launchAngle = attackType === "strong" ? -0.58 : -0.42; // Ángulo diagonal hacia arriba
+  defender.vx = attacker.facing * totalLaunchSpeed * Math.cos(launchAngle) * crouchArmor;
+  defender.vy = totalLaunchSpeed * Math.sin(launchAngle) * crouchArmor;
+  defender.onGround = false;
+  defender.hitstunTimer = Math.min(65, Math.floor(totalLaunchSpeed * 1.45));
+  defender.attackState = null;
+
+  updateHudElements();
+}
+
+function handleFighterKO(f) {
+  playSfx("ko");
+  screenShake = 24;
+
+  // Explosión direccional en el borde de la pantalla (como en Super Smash Bros Brawl)
+  const clampX = Math.max(40, Math.min(VIRTUAL_W - 40, f.x));
+  const clampY = Math.max(40, Math.min(VIRTUAL_H - 40, f.y));
+  const blastColor = f.isAI ? "#2ea8ff" : "#ff3b4e";
+  spawnParticles(clampX, clampY, blastColor, 48, 11);
+  spawnParticles(clampX, clampY, "#ffcc00", 28, 8);
+  spawnFloatingText(clampX, clampY, "¡FUERA DEL MAPA!", "#ffcc00", 24);
+
+  f.lives = Math.max(0, f.lives - 1);
+  updateHudElements();
+
+  if (f.lives <= 0) {
+    // Fin de la partida por dejar al rival con 0 vidas
+    endMatch("KO");
+  } else {
+    f.respawnTimer = 65;
+  }
+}
+
+// ============================================================================
+// 9. TEMPORIZADOR DE 5 MINUTOS Y REGLAS DE VICTORIA / EMPATE
+// ============================================================================
+let lastSecondTimestamp = performance.now();
+
+function updateMatchTimer(now) {
+  if (gameState !== "PLAYING") return;
+  if (now - lastSecondTimestamp >= 1000) {
+    lastSecondTimestamp = now;
+    matchTimer = Math.max(0, matchTimer - 1);
+    updateTimerDisplay();
+
+    if (matchTimer <= 0) {
+      endMatch("TIME");
+    }
+  }
+}
+
+function updateTimerDisplay() {
+  const mins = String(Math.floor(matchTimer / 60)).padStart(2, "0");
+  const secs = String(matchTimer % 60).padStart(2, "0");
+  const timerEl = document.getElementById("hud-timer");
+  timerEl.textContent = `${mins}:${secs}`;
+  timerEl.classList.toggle("urgent", matchTimer <= 30);
+}
+
+function endMatch(reasonType) {
+  gameState = "FINISHED";
+  playSfx("win");
+
+  const overlay = document.getElementById("result-overlay");
+  const banner = document.getElementById("result-banner");
+  const subtitle = document.getElementById("result-subtitle");
+  const reason = document.getElementById("result-reason");
+  const img = document.getElementById("result-img");
+
+  overlay.classList.remove("hidden");
+
+  const p1Lives = playerFighter.lives;
+  const aiLives = aiFighter.lives;
+
+  // Reglas exactas pedidas por el usuario:
+  // - Si alguien queda con 0 vidas -> gana el otro
+  // - Cuando acaben los 5 minutos: gana quien más vidas tenga, y hay empate si ambos tienen 2 vidas (o las mismas vidas)
+  if (p1Lives > aiLives) {
+    banner.textContent = "¡GANADOR!";
+    banner.style.color = "#ffcc00";
+    subtitle.textContent = `JUGADOR 1 (${playerFighter.poke.name.toUpperCase()})`;
+    reason.textContent = reasonType === "KO"
+      ? `¡Dejaste al rival con 0 vidas! (Te quedaron ${p1Lives} vidas)`
+      : `¡Fin del tiempo (5:00)! Ganaste por tener más vidas (${p1Lives} vs ${aiLives})`;
+    img.src = playerFighter.poke.spriteUrl;
+  } else if (aiLives > p1Lives) {
+    banner.textContent = "¡GANADOR!";
+    banner.style.color = "#2ea8ff";
+    subtitle.textContent = `RIVAL IA (${aiFighter.poke.name.toUpperCase()})`;
+    reason.textContent = reasonType === "KO"
+      ? `¡Te quedaste sin vidas! (La IA conservó ${aiLives} vidas)`
+      : `¡Fin del tiempo (5:00)! La IA ganó por tener más vidas (${aiLives} vs ${p1Lives})`;
+    img.src = aiFighter.poke.spriteUrl;
+  } else {
+    // Empate (ej. ambos tienen 2 vidas al acabar los 5 minutos)
+    banner.textContent = "¡EMPATE!";
+    banner.style.color = "#e0e0e0";
+    subtitle.textContent = `${playerFighter.poke.name.toUpperCase()} vs ${aiFighter.poke.name.toUpperCase()}`;
+    reason.textContent = `¡Se agotaron los 5 minutos y ambos tenéis ${p1Lives} vidas!`;
+    img.src = playerFighter.poke.spriteUrl;
+  }
+}
+
+// ============================================================================
+// 10. ACTUALIZACIÓN DEL HUD (VIDAS Y PORCENTAJE DE ACUMULACIÓN)
+// ============================================================================
+function updateHudElements() {
+  if (!playerFighter || !aiFighter) return;
+
+  // P1
+  const p1Img = document.getElementById("hud-p1-img");
+  if (p1Img.src !== playerFighter.poke.spriteUrl) p1Img.src = playerFighter.poke.spriteUrl;
+  document.getElementById("hud-p1-name").textContent = `${playerFighter.poke.name} (TÚ)`;
+  document.getElementById("hud-p1-pct").textContent = `${playerFighter.damagePct}%`;
+  document.getElementById("hud-p1-pct").style.color = getDamageColor(playerFighter.damagePct);
+  document.getElementById("hud-p1-bar").style.width = `${Math.min(100, playerFighter.damagePct)}%`;
+  document.getElementById("hud-p1-danger").classList.toggle("active", playerFighter.damagePct >= 100);
+  renderStocks("hud-p1-stocks", playerFighter.lives);
+
+  // AI
+  const aiImg = document.getElementById("hud-ai-img");
+  if (aiImg.src !== aiFighter.poke.spriteUrl) aiImg.src = aiFighter.poke.spriteUrl;
+  document.getElementById("hud-ai-name").textContent = `${aiFighter.poke.name} (IA)`;
+  document.getElementById("hud-ai-pct").textContent = `${aiFighter.damagePct}%`;
+  document.getElementById("hud-ai-pct").style.color = getDamageColor(aiFighter.damagePct);
+  document.getElementById("hud-ai-bar").style.width = `${Math.min(100, aiFighter.damagePct)}%`;
+  document.getElementById("hud-ai-danger").classList.toggle("active", aiFighter.damagePct >= 100);
+  renderStocks("hud-ai-stocks", aiFighter.lives);
+
+  updateTimerDisplay();
+}
+
+function getDamageColor(pct) {
+  if (pct < 40) return "#ffffff";
+  if (pct < 80) return "#ffee58";
+  if (pct < 100) return "#ff9100";
+  return "#ff1744";
+}
+
+function renderStocks(containerId, lives) {
+  const el = document.getElementById(containerId);
+  let html = "";
+  for (let i = 0; i < 3; i++) {
+    html += `<div class="stock-ball ${i < lives ? '' : 'lost'}"></div>`;
+  }
+  el.innerHTML = html;
+}
+
+// ============================================================================
+// 11. EFECTOS VISUALES (PARTÍCULAS Y TEXTO FLOTANTE)
+// ============================================================================
+function spawnParticles(x, y, color, count, maxSpeed) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 1 + Math.random() * maxSpeed;
+    particles.push({
+      x,
+      y,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      size: 3 + Math.random() * 5,
+      color,
+      alpha: 1,
+      decay: 0.025 + Math.random() * 0.02
+    });
+  }
+}
+
+function spawnRingParticles(x, y, color, count) {
+  for (let i = 0; i < count; i++) {
+    const t = (i / count) * Math.PI * 2;
+    particles.push({
+      x: x + Math.cos(t) * 14,
+      y: y + Math.sin(t) * 4,
+      vx: Math.cos(t) * 3.2,
+      vy: Math.sin(t) * 0.8,
+      size: 4,
+      color,
+      alpha: 1,
+      decay: 0.04
+    });
+  }
+}
+
+function spawnFloatingText(x, y, text, color, size = 16) {
+  floatingTexts.push({ x, y, text, color, size, alpha: 1, vy: -1.4 });
+}
+
+// ============================================================================
+// 12. RENDERIZADO DEL ESCENARIO Y LUCHADORES
+// ============================================================================
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas();
+
+function drawBattleScene() {
+  ctx.save();
+  // Escalar el espacio virtual 1280x720 a cualquier pantalla
+  const scaleX = canvas.width / VIRTUAL_W;
+  const scaleY = canvas.height / VIRTUAL_H;
+  const scale = Math.min(scaleX, scaleY);
+  const offsetX = (canvas.width - VIRTUAL_W * scale) / 2;
+  const offsetY = (canvas.height - VIRTUAL_H * scale) / 2;
+
+  ctx.fillStyle = "#060912";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.translate(offsetX, offsetY);
+  ctx.scale(scale, scale);
+
+  if (screenShake > 0) {
+    const sx = (Math.random() - 0.5) * screenShake;
+    const sy = (Math.random() - 0.5) * screenShake;
+    ctx.translate(sx, sy);
+    screenShake *= 0.85;
+    if (screenShake < 0.4) screenShake = 0;
+  }
+
+  // 1. Fondo del Estadio de Kanto (Meseta Añil)
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, VIRTUAL_H);
+  skyGrad.addColorStop(0, "#0f172e");
+  skyGrad.addColorStop(0.55, "#1e294a");
+  skyGrad.addColorStop(1, "#090d18");
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, VIRTUAL_W, VIRTUAL_H);
+
+  // Pokéball gigante sutil en el fondo del estadio
+  ctx.save();
+  ctx.translate(VIRTUAL_W / 2, 340);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.05)";
+  ctx.lineWidth = 14;
+  ctx.beginPath();
+  ctx.arc(0, 0, 220, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, 0, 56, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(-220, 0);
+  ctx.lineTo(-56, 0);
+  ctx.moveTo(56, 0);
+  ctx.lineTo(220, 0);
+  ctx.stroke();
+  ctx.restore();
+
+  // 2. Dibujar la Plataforma Principal Grande
+  const mp = STAGE.mainPlatform;
+  // Base inferior del estadio
+  const baseGrad = ctx.createLinearGradient(mp.x, mp.y, mp.x, mp.y + 130);
+  baseGrad.addColorStop(0, "#2b3856");
+  baseGrad.addColorStop(1, "#0d1322");
+  ctx.fillStyle = baseGrad;
+  ctx.beginPath();
+  ctx.moveTo(mp.x + 10, mp.y + mp.h);
+  ctx.lineTo(mp.x + mp.w - 10, mp.y + mp.h);
+  ctx.lineTo(mp.x + mp.w - 95, mp.y + 135);
+  ctx.lineTo(mp.x + 95, mp.y + 135);
+  ctx.closePath();
+  ctx.fill();
+
+  // Superficie de la plataforma principal
+  const surfGrad = ctx.createLinearGradient(mp.x, mp.y, mp.x + mp.w, mp.y);
+  surfGrad.addColorStop(0, "#ff3b4e");
+  surfGrad.addColorStop(0.15, "#3b4c73");
+  surfGrad.addColorStop(0.85, "#3b4c73");
+  surfGrad.addColorStop(1, "#2ea8ff");
+  ctx.fillStyle = surfGrad;
+  ctx.fillRect(mp.x, mp.y, mp.w, mp.h);
+
+  ctx.strokeStyle = "#d9e4ff";
+  ctx.lineWidth = 3;
+  ctx.strokeRect(mp.x, mp.y, mp.w, mp.h);
+
+  // 3. Dibujar las 3 Plataformas Pequeñas Flotantes (Atravesables con S+S)
+  for (const sp of STAGE.smallPlatforms) {
+    ctx.fillStyle = "#263659";
+    ctx.fillRect(sp.x, sp.y, sp.w, sp.h);
+    ctx.fillStyle = "#7da8ff";
+    ctx.fillRect(sp.x, sp.y, sp.w, 4);
+    ctx.strokeStyle = "rgba(255,255,255,0.45)";
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(sp.x, sp.y, sp.w, sp.h);
+  }
+
+  // 4. Dibujar Luchadores
+  if (playerFighter) drawFighter(playerFighter);
+  if (aiFighter) drawFighter(aiFighter);
+
+  // 5. Dibujar Partículas
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const p = particles[i];
+    p.x += p.vx;
+    p.y += p.vy;
+    p.alpha -= p.decay;
+    if (p.alpha <= 0) {
+      particles.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, p.alpha);
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // 6. Dibujar Textos Flotantes
+  for (let i = floatingTexts.length - 1; i >= 0; i--) {
+    const ft = floatingTexts[i];
+    ft.y += ft.vy;
+    ft.alpha -= 0.022;
+    if (ft.alpha <= 0) {
+      floatingTexts.splice(i, 1);
+      continue;
+    }
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, ft.alpha);
+    ctx.font = `900 ${ft.size}px 'Segoe UI', Impact, sans-serif`;
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 4;
+    ctx.strokeText(ft.text, ft.x, ft.y);
+    ctx.fillStyle = ft.color;
+    ctx.fillText(ft.text, ft.x, ft.y);
+    ctx.restore();
+  }
+
+  // 7. Anuncio central ("¡A LUCHAR!")
+  if (announcement.timer > 0) {
+    announcement.timer--;
+    ctx.save();
+    ctx.font = "900 54px Impact, 'Segoe UI Black', sans-serif";
+    ctx.textAlign = "center";
+    ctx.strokeStyle = "#000";
+    ctx.lineWidth = 8;
+    ctx.strokeText(announcement.text, VIRTUAL_W / 2, VIRTUAL_H / 2 - 40);
+    ctx.fillStyle = announcement.color;
+    ctx.fillText(announcement.text, VIRTUAL_W / 2, VIRTUAL_H / 2 - 40);
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+function drawFighter(f) {
+  if (f.respawnTimer > 0) return;
+
+  ctx.save();
+  ctx.translate(f.x, f.y);
+
+  // Parpadeo de invencibilidad tras reaparecer
+  if (f.invincibleTimer > 0 && Math.floor(f.invincibleTimer / 4) % 2 === 0) {
+    ctx.globalAlpha = 0.45;
+  }
+
+  // Aura de peligro cuando la acumulación llega al máximo (>= 100%)
+  if (f.damagePct >= 100) {
+    ctx.save();
+    ctx.strokeStyle = "#ff1744";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(0, 0, 38 + Math.sin(performance.now() * 0.02) * 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Sombra en el suelo
+  if (f.onGround) {
+    ctx.fillStyle = "rgba(0,0,0,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(0, f.h / 2, 24, 6, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  // Indicador sobre la cabeza (J1 / IA)
+  const tagColor = f.isAI ? "#2ea8ff" : "#ff3b4e";
+  ctx.fillStyle = tagColor;
+  ctx.font = "900 13px 'Segoe UI', sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText(f.isAI ? `IA (${f.damagePct}%)` : `TÚ (${f.damagePct}%)`, 0, -f.h / 2 - 16);
+
+  // Triángulo indicador
+  ctx.beginPath();
+  ctx.moveTo(-6, -f.h / 2 - 12);
+  ctx.lineTo(6, -f.h / 2 - 12);
+  ctx.lineTo(0, -f.h / 2 - 5);
+  ctx.closePath();
+  ctx.fill();
+
+  // Efecto visual del Ataque Rápido o Ataque Fuerte
+  if (f.attackState) {
+    const st = f.attackState;
+    const isStrong = st.type === "strong";
+    const reach = isStrong ? 84 : 60;
+    ctx.save();
+    ctx.fillStyle = isStrong ? f.poke.color1 : "#ffffff";
+    ctx.globalAlpha = 0.68;
+    ctx.beginPath();
+    ctx.arc(f.facing * (reach * 0.55), 0, isStrong ? 36 : 22, 0, Math.PI * 2);
+    ctx.fill();
+    if (isStrong) {
+      ctx.strokeStyle = "#ffee58";
+      ctx.lineWidth = 4;
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Dibujar el Sprite del Pokémon
+  // Los sprites frontales miran ligeramente a la izquierda por defecto; los volteamos según dirección
+  const scaleY = f.crouching ? 0.72 : 1.0;
+  const scaleX = f.crouching ? 1.18 : 1.0;
+  ctx.scale(f.facing * scaleX, scaleY);
+
+  const drawSize = 78;
+  if (f.sprite && f.sprite.complete && f.sprite.naturalWidth > 0) {
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(f.sprite, -drawSize / 2, -drawSize / 2 + (f.crouching ? 8 : 0), drawSize, drawSize);
+  } else {
+    ctx.fillStyle = f.poke.color1;
+    ctx.beginPath();
+    ctx.arc(0, 0, 26, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+
+// ============================================================================
+// 13. BUCLE PRINCIPAL (60 FPS)
+// ============================================================================
+function mainLoop(now) {
+  requestAnimationFrame(mainLoop);
+
+  if (gameState === "PLAYING") {
+    updateMatchTimer(now);
+
+    if (hitstopFrames > 0) {
+      hitstopFrames--;
+    } else {
+      updateFighterPhysics(playerFighter, aiFighter);
+      updateAIFighter(aiFighter, playerFighter);
+      updateFighterPhysics(aiFighter, playerFighter);
+    }
+    drawBattleScene();
+  } else if (gameState === "FINISHED") {
+    drawBattleScene();
+  }
+}
+
+// Inicializar pantalla de selección
+renderRoster();
+updatePreviewCards();
+requestAnimationFrame(mainLoop);
+</script>
+</body>
+</html>
+
