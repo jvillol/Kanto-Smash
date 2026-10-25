@@ -1032,7 +1032,8 @@
   <div class="hud-controls-legend">
     <b>A / D</b>: Izq / Der &nbsp;|&nbsp; <b>W</b>: Saltar (<b>W+W</b>: Salto Potenciado)<br>
     <b>S</b>: Agacharse (<b>S+S</b>: Bajar plataforma)<br>
-    <b>Click Izq</b>: Ataque Rápido &nbsp;|&nbsp; <b>Click Der</b>: Ataque Fuerte &nbsp;|&nbsp; <b>E / Espacio</b>: ¡Habilidad Especial!
+    <b>Click Izq</b>: Ataque Rápido &nbsp;|&nbsp; <b>Click Der</b>: Ataque Fuerte &nbsp;|&nbsp; <b>E / Espacio</b>: ¡Habilidad Especial!<br>
+    <span style="color:#00e5ff; font-weight:700;">🫧 Burbujas</span>: 🛡️ Escudo 5s &nbsp;|&nbsp; 💚 -20% Daño &nbsp;|&nbsp; ⚡ Especial &nbsp;|&nbsp; ❄️ Congelar &nbsp;|&nbsp; 💥 Mega Smash
   </div>
 
   <div class="top-bar-hud">
@@ -1733,6 +1734,14 @@ function playSfx(type) {
     gain.gain.linearRampToValueAtTime(0.01, now + 0.55);
     osc.start(now);
     osc.stop(now + 0.55);
+  } else if (type === "bubblePop") {
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(650, now);
+    osc.frequency.exponentialRampToValueAtTime(1350, now + 0.08);
+    gain.gain.setValueAtTime(0.22, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.11);
+    osc.start(now);
+    osc.stop(now + 0.11);
   } else if (type === "win") {
     const notes = [523.25, 659.25, 783.99, 1046.5];
     notes.forEach((freq, idx) => {
@@ -2019,7 +2028,208 @@ let screenShake = 0;
 let particles = [];
 let floatingTexts = [];
 let projectiles = [];
+let powerupBubbles = [];
+let nextBubbleSpawnTimer = 360;
 let announcement = { text: "", timer: 0, color: "#ffcc00" };
+
+// ============================================================================
+// 5.5 SISTEMA DE BURBUJAS CON MEJORAS FLOTANTES
+// ============================================================================
+const BUBBLE_TYPES = [
+  {
+    id: "shield",
+    name: "Escudo Inmune (5s)",
+    icon: "🛡️",
+    color: "#ffd700",
+    glow: "rgba(255, 215, 0, 0.65)",
+    effect: (collector, opponent) => {
+      collector.shieldTimer = 300; // 5 segundos a 60 FPS
+      spawnRingParticles(collector.x, collector.y, "#ffd700", 24);
+      spawnFloatingText(collector.x, collector.y - 48, "¡ESCUDO 5s!", "#ffd700", 20);
+      playSfx("confirm");
+    }
+  },
+  {
+    id: "heal",
+    name: "Curación (-20% Daño)",
+    icon: "💚",
+    color: "#00e676",
+    glow: "rgba(0, 230, 118, 0.65)",
+    effect: (collector, opponent) => {
+      const reduction = Math.random() < 0.5 ? 15 : 20;
+      collector.damagePct = Math.max(0, collector.damagePct - reduction);
+      spawnRingParticles(collector.x, collector.y, "#00e676", 20);
+      spawnParticles(collector.x, collector.y, "#b9f6ca", 16, 5);
+      spawnFloatingText(collector.x, collector.y - 48, `-${reduction}% DAÑO`, "#00e676", 20);
+      playSfx("select");
+      updateHudElements();
+    }
+  },
+  {
+    id: "special",
+    name: "Recarga Especial",
+    icon: "⚡",
+    color: "#ffea00",
+    glow: "rgba(255, 234, 0, 0.65)",
+    effect: (collector, opponent) => {
+      collector.specialCooldown = 0;
+      spawnRingParticles(collector.x, collector.y, "#ffea00", 22);
+      spawnParticles(collector.x, collector.y, "#ffffff", 14, 5);
+      spawnFloatingText(collector.x, collector.y - 48, "¡ESPECIAL LISTO!", "#ffea00", 20);
+      playSfx("boostJump");
+      updateHudElements();
+    }
+  },
+  {
+    id: "freeze",
+    name: "Congelar Rival (3.5s)",
+    icon: "❄️",
+    color: "#00e5ff",
+    glow: "rgba(0, 229, 255, 0.65)",
+    effect: (collector, opponent) => {
+      opponent.isFrozen = 210; // ~3.5 segundos
+      opponent.vx *= 0.15;
+      spawnRingParticles(opponent.x, opponent.y, "#00e5ff", 26);
+      spawnParticles(opponent.x, opponent.y, "#ffffff", 18, 6);
+      spawnFloatingText(opponent.x, opponent.y - 48, "¡RIVAL CONGELADO!", "#00e5ff", 20);
+      playSfx("jump");
+    }
+  },
+  {
+    id: "smash",
+    name: "Mega Golpe Smash (8s)",
+    icon: "💥",
+    color: "#ff3d00",
+    glow: "rgba(255, 61, 0, 0.65)",
+    effect: (collector, opponent) => {
+      collector.superSmashTimer = 480; // 8 segundos
+      spawnRingParticles(collector.x, collector.y, "#ff3d00", 24);
+      spawnParticles(collector.x, collector.y, "#ffee58", 20, 7);
+      spawnFloatingText(collector.x, collector.y - 48, "¡MEGA SMASH x2!", "#ff3d00", 22);
+      playSfx("strongHit");
+    }
+  }
+];
+
+function spawnPowerupBubble() {
+  if (powerupBubbles.length >= 3) return;
+  const typeDef = BUBBLE_TYPES[Math.floor(Math.random() * BUBBLE_TYPES.length)];
+  const originX = 380 + Math.random() * 520;
+  powerupBubbles.push({
+    typeDef,
+    originX,
+    x: originX,
+    y: -35,
+    vy: 0.95 + Math.random() * 0.45,
+    wobbleFreq: 0.035 + Math.random() * 0.02,
+    wobbleAmp: 25 + Math.random() * 15,
+    time: Math.random() * 100,
+    radius: 24
+  });
+}
+
+function popBubbleEffect(b) {
+  playSfx("bubblePop");
+  spawnRingParticles(b.x, b.y, b.typeDef.color, 20);
+  spawnParticles(b.x, b.y, "#ffffff", 12, 4);
+}
+
+function updatePowerupBubbles() {
+  if (gameState !== "PLAYING") return;
+  nextBubbleSpawnTimer--;
+  if (nextBubbleSpawnTimer <= 0) {
+    if (powerupBubbles.length < 3) {
+      spawnPowerupBubble();
+    }
+    // Intervalo aleatorio entre 8 y 16 segundos
+    nextBubbleSpawnTimer = 480 + Math.floor(Math.random() * 480);
+  }
+
+  for (let i = powerupBubbles.length - 1; i >= 0; i--) {
+    const b = powerupBubbles[i];
+    b.time++;
+    b.y += b.vy;
+    b.x = b.originX + Math.sin(b.time * b.wobbleFreq) * b.wobbleAmp;
+
+    // Contacto con Jugador 1
+    if (playerFighter && playerFighter.respawnTimer <= 0) {
+      const d = Math.hypot(b.x - playerFighter.x, b.y - playerFighter.y);
+      if (d < b.radius + playerFighter.w * 0.45) {
+        b.typeDef.effect(playerFighter, aiFighter);
+        popBubbleEffect(b);
+        powerupBubbles.splice(i, 1);
+        continue;
+      }
+    }
+
+    // Contacto con la IA
+    if (aiFighter && aiFighter.respawnTimer <= 0) {
+      const d = Math.hypot(b.x - aiFighter.x, b.y - aiFighter.y);
+      if (d < b.radius + aiFighter.w * 0.45) {
+        b.typeDef.effect(aiFighter, playerFighter);
+        popBubbleEffect(b);
+        powerupBubbles.splice(i, 1);
+        continue;
+      }
+    }
+
+    // Despawn si cae fuera del mapa inferior
+    if (b.y > STAGE.blastZone.bottom - 40) {
+      powerupBubbles.splice(i, 1);
+    }
+  }
+}
+
+function drawPowerupBubbles() {
+  for (let i = 0; i < powerupBubbles.length; i++) {
+    const b = powerupBubbles[i];
+    ctx.save();
+    ctx.translate(b.x, b.y);
+
+    const pulse = 1 + Math.sin(b.time * 0.08) * 0.08;
+    const r = b.radius * pulse;
+
+    // Halo exterior brillante
+    const outerGrad = ctx.createRadialGradient(0, 0, r * 0.4, 0, 0, r * 1.6);
+    outerGrad.addColorStop(0, b.typeDef.glow);
+    outerGrad.addColorStop(1, "transparent");
+    ctx.fillStyle = outerGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r * 1.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Membrana de burbuja iridiscente
+    const bodyGrad = ctx.createRadialGradient(-r * 0.35, -r * 0.35, r * 0.1, 0, 0, r);
+    bodyGrad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+    bodyGrad.addColorStop(0.35, b.typeDef.glow);
+    bodyGrad.addColorStop(0.85, b.typeDef.color);
+    bodyGrad.addColorStop(1, "rgba(255, 255, 255, 0.95)");
+
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, r, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Borde brillante de cristal
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.lineWidth = 2.2;
+    ctx.stroke();
+
+    // Reflejo blanco curvo de luz
+    ctx.fillStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.beginPath();
+    ctx.ellipse(-r * 0.35, -r * 0.35, r * 0.32, r * 0.16, -Math.PI / 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Icono emoji centrado
+    ctx.font = `${Math.round(r * 1.05)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(b.typeDef.icon, 0, 2);
+
+    ctx.restore();
+  }
+}
 
 // Estado de teclas del jugador
 const keys = { a: false, d: false, s: false, w: false };
@@ -2062,6 +2272,10 @@ class Fighter {
     this.maxSpecialCooldown = 320; // ~5.3 segundos de recarga
     this.isFrozen = 0; // Efecto de congelación por tipo Hielo
 
+    // Mejoras de burbujas (Power-ups)
+    this.shieldTimer = 0; // Inmunidad total a daño y empuje (frames)
+    this.superSmashTimer = 0; // Potenciador de daño y empuje crítico Smash (frames)
+
     // Combate
     this.attackState = null; // null | { type: 'fast'|'strong', timer, duration, hitDealt }
     this.attackCooldown = 0;
@@ -2087,6 +2301,8 @@ class Fighter {
     this.boostedJumpActive = false;
     this.specialCooldown = 0;
     this.isFrozen = 0;
+    this.shieldTimer = 0;
+    this.superSmashTimer = 0;
   }
 
   useSpecial(opponent) {
@@ -2181,6 +2397,8 @@ function startMatch() {
   particles = [];
   floatingTexts = [];
   projectiles = [];
+  powerupBubbles = [];
+  nextBubbleSpawnTimer = 300 + Math.floor(Math.random() * 300); // 5 a 10s primera burbuja
   hitstopFrames = 0;
   screenShake = 0;
   gameState = "PLAYING";
@@ -2285,6 +2503,30 @@ function updateAIFighter(ai, target) {
     return;
   }
 
+  // 1.5 Interés táctico por recoger burbujas con mejoras
+  if (powerupBubbles.length > 0 && !ai.attackState) {
+    const bubbleInterest = aiDifficulty === "hard" ? 0.75 : (aiDifficulty === "medium" ? 0.40 : 0.12);
+    let nearestBubble = null;
+    let minDist = 300;
+    for (const b of powerupBubbles) {
+      const d = Math.hypot(b.x - ai.x, b.y - ai.y);
+      if (d < minDist) {
+        minDist = d;
+        nearestBubble = b;
+      }
+    }
+    if (nearestBubble && Math.random() < bubbleInterest) {
+      const bdx = nearestBubble.x - ai.x;
+      const bdy = nearestBubble.y - ai.y;
+      ai.facing = bdx > 0 ? 1 : -1;
+      ai.vx += (ai.facing * ai.moveSpeed * cfg.speedMult - ai.vx) * 0.22;
+      if (bdy < -40 && ai.onGround && Math.random() < 0.35) {
+        ai.performJump(false);
+      }
+      return;
+    }
+  }
+
   // 2. Temporizador de toma de decisiones
   ai.aiDecisionTimer--;
   if (ai.aiDecisionTimer <= 0) {
@@ -2375,6 +2617,14 @@ function updateProjectiles() {
     if (target && target.respawnTimer <= 0 && target.invincibleTimer <= 0) {
       const dist = Math.hypot(proj.x - target.x, proj.y - target.y);
       if (dist < proj.radius + target.w * 0.45) {
+        if (target.shieldTimer > 0) {
+          playSfx("select");
+          spawnRingParticles(target.x, target.y, "#ffd700", 14);
+          spawnFloatingText(target.x, target.y - 35, "¡ESCUDO ACTIVO!", "#ffd700", 16);
+          projectiles.splice(i, 1);
+          continue;
+        }
+
         target.damagePct = Math.min(999, target.damagePct + proj.damage);
         const launchDir = proj.vx !== 0 ? (proj.vx > 0 ? 1 : -1) : proj.owner.facing;
         target.vx = launchDir * (proj.kb + target.damagePct * 0.08);
@@ -2415,6 +2665,8 @@ function updateFighterPhysics(f, opponent) {
   if (f.dropThroughTimer > 0) f.dropThroughTimer--;
   if (f.specialCooldown > 0) f.specialCooldown--;
   if (f.isFrozen > 0) f.isFrozen--;
+  if (f.shieldTimer > 0) f.shieldTimer--;
+  if (f.superSmashTimer > 0) f.superSmashTimer--;
 
   if (f.hitstunTimer > 0) {
     f.hitstunTimer--;
@@ -2517,11 +2769,24 @@ function checkAttackHit(attacker, defender, attackType) {
 
   attacker.attackState.hitDealt = true;
 
+  // Escudo de Inmunidad de la víctima: absorbe completamente el ataque
+  if (defender.shieldTimer > 0) {
+    playSfx("select");
+    spawnRingParticles(defender.x, defender.y, "#ffd700", 16);
+    spawnFloatingText(defender.x, defender.y - 40, "¡ESCUDO ACTIVO!", "#ffd700", 18);
+    screenShake = 3;
+    return;
+  }
+
   // 1. Acumulación de daño (Ritmo ajustado para partidas más largas y tácticas):
   // Ataque rápido llena menos (+2% a +4%), ataque fuerte llena más (+7% a +10%)
-  const rawGain = attackType === "fast"
+  let rawGain = attackType === "fast"
     ? Math.max(1, Math.round((2.2 + Math.random() * 1.6) * attacker.atkMultiplier))
     : Math.max(3, Math.round((6.8 + Math.random() * 2.8) * attacker.atkMultiplier));
+
+  if (attacker.superSmashTimer > 0) {
+    rawGain = Math.round(rawGain * 1.5 + 4);
+  }
 
   defender.damagePct = Math.min(999, defender.damagePct + rawGain);
 
@@ -2543,6 +2808,12 @@ function checkAttackHit(attacker, defender, attackType) {
   let baseKb = attackType === "fast" ? 4.5 : 8.5;
   let scalingKb = (defender.damagePct * (attackType === "fast" ? 0.075 : 0.145)) / defender.weightFactor;
   let totalLaunchSpeed = baseKb + scalingKb;
+
+  if (attacker.superSmashTimer > 0) {
+    totalLaunchSpeed *= 1.7;
+    spawnParticles(defender.x, defender.y, "#ff3d00", 22, 7);
+    spawnParticles(defender.x, defender.y, "#ffea00", 14, 5);
+  }
 
   if (isCriticalSmashLaunch) {
     // ¡Disparo explosivo fuera del mapa!
@@ -2900,6 +3171,9 @@ function drawBattleScene() {
     ctx.restore();
   }
 
+  // 3.6 Dibujar Burbujas Flotantes con Mejoras
+  drawPowerupBubbles();
+
   // 4. Dibujar Luchadores
   if (playerFighter) drawFighter(playerFighter);
   if (aiFighter) drawFighter(aiFighter);
@@ -3025,7 +3299,7 @@ function drawFighter(f) {
     ctx.restore();
   }
 
-  // Efecto de congelación si está bajo Ventisca Helada
+  // Efecto de congelación si está bajo Ventisca Helada o Burbuja de Hielo
   if (f.isFrozen > 0) {
     ctx.save();
     ctx.strokeStyle = "#00e5ff";
@@ -3033,8 +3307,48 @@ function drawFighter(f) {
     ctx.beginPath();
     ctx.arc(0, 0, 36, 0, Math.PI * 2);
     ctx.stroke();
-    ctx.fillStyle = "rgba(0, 229, 255, 0.22)";
+    ctx.fillStyle = "rgba(0, 229, 255, 0.25)";
     ctx.fill();
+    ctx.restore();
+  }
+
+  // Escudo de Inmunidad Activo (cúpula dorada protectora)
+  if (f.shieldTimer > 0) {
+    ctx.save();
+    const shieldRadius = 40 + Math.sin(performance.now() * 0.015) * 3;
+    const shieldGrad = ctx.createRadialGradient(0, 0, 10, 0, 0, shieldRadius);
+    shieldGrad.addColorStop(0, "rgba(255, 215, 0, 0.1)");
+    shieldGrad.addColorStop(0.7, "rgba(255, 215, 0, 0.28)");
+    shieldGrad.addColorStop(1, "rgba(255, 235, 59, 0.85)");
+    ctx.fillStyle = shieldGrad;
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#ffd700";
+    ctx.lineWidth = 2.8;
+    ctx.setLineDash([8, 6]);
+    ctx.lineDashOffset = -(performance.now() * 0.04);
+    ctx.beginPath();
+    ctx.arc(0, 0, shieldRadius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  // Mega Golpe Smash Activo (orbes ígneos giratorios)
+  if (f.superSmashTimer > 0) {
+    ctx.save();
+    const flameCount = 4;
+    for (let i = 0; i < flameCount; i++) {
+      const angle = (performance.now() * 0.007) + (i * (Math.PI * 2 / flameCount));
+      const fx = Math.cos(angle) * 34;
+      const fy = Math.sin(angle) * 26;
+      ctx.fillStyle = i % 2 === 0 ? "#ff3d00" : "#ffea00";
+      ctx.beginPath();
+      ctx.arc(fx, fy, 5 + Math.sin(performance.now() * 0.02 + i) * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
@@ -3074,6 +3388,7 @@ function mainLoop(now) {
       updateAIFighter(aiFighter, playerFighter);
       updateFighterPhysics(aiFighter, playerFighter);
       updateProjectiles();
+      updatePowerupBubbles();
     }
     drawBattleScene();
   } else if (gameState === "FINISHED") {

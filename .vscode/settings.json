@@ -1,11 +1,22 @@
 {
-  "dotnet.defaultSolution": "KantoSmash.sln",
-  "dotnet.server.suppressLspErrorNotifications": true,
+  "dotnet.projects.autoLoad": false,
+  "dotnet.server.startServer": false,
+  "dotnet.server.activateOnOpen": false,
   "dotnet.server.suppressProjectLoadNotifications": true,
+  "dotnet.server.suppressLspErrorNotifications": true,
   "csharp.suppressProjectLoadNotifications": true,
   "csharp.suppressDotnetInstallWarning": true,
   "csharp.suppressDotnetRestoreNotification": true,
   "csharp.showOmnisharpLogOnError": false,
   "omnisharp.autoStart": false,
-  "csharp.maxProjectFileCountForDiagnosticAnalysis": 0
+  "csharp.maxProjectFileCountForDiagnosticAnalysis": 0,
+  "dotnet.defaultSolution": "none",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true
+  }
 }
