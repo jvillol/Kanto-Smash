@@ -418,6 +418,7 @@
     justify-content: space-between;
     align-items: center;
     text-align: center;
+    gap: 6px;
   }
   .controls-hint {
     font-size: 11px;
@@ -426,6 +427,58 @@
   }
   .controls-hint strong {
     color: var(--gold);
+  }
+  .difficulty-box {
+    width: 100%;
+    background: rgba(0,0,0,0.36);
+    border-radius: 8px;
+    padding: 6px 8px;
+    border: 1px solid rgba(255,255,255,0.12);
+  }
+  .diff-title {
+    font-size: 11px;
+    font-weight: 800;
+    color: #9fb0d6;
+    letter-spacing: 0.5px;
+    display: block;
+    margin-bottom: 5px;
+  }
+  .diff-buttons-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+  .diff-btn {
+    border: 2px solid transparent;
+    border-radius: 6px;
+    padding: 5px 4px;
+    font-size: 11px;
+    font-weight: 900;
+    cursor: pointer;
+    background: rgba(255,255,255,0.08);
+    color: #b8c7e8;
+    transition: all 0.15s ease;
+  }
+  .diff-btn:hover {
+    background: rgba(255,255,255,0.18);
+  }
+  .diff-btn.easy.active {
+    background: rgba(76, 175, 80, 0.32);
+    border-color: #4caf50;
+    color: #a5d6a7;
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.45);
+  }
+  .diff-btn.medium.active {
+    background: rgba(255, 193, 7, 0.32);
+    border-color: #ffc107;
+    color: #ffe082;
+    box-shadow: 0 0 10px rgba(255, 193, 7, 0.45);
+  }
+  .diff-btn.hard.active {
+    background: rgba(244, 67, 54, 0.32);
+    border-color: #f44336;
+    color: #ef9a9a;
+    box-shadow: 0 0 10px rgba(244, 67, 54, 0.45);
   }
   .action-buttons {
     display: flex;
@@ -846,6 +899,16 @@
         <strong>S</strong> Agacharse (<strong>2x S</strong> Bajar plataforma)<br>
         <strong>Click Izq</strong> Ataque Rápido • <strong>Click Der</strong> Ataque Fuerte
       </div>
+
+      <div class="difficulty-box">
+        <span class="diff-title">DIFICULTAD DE LA IA:</span>
+        <div class="diff-buttons-row">
+          <button id="diff-easy" class="diff-btn easy" type="button" onclick="setAIDifficulty('easy')">🟢 Fácil</button>
+          <button id="diff-medium" class="diff-btn medium active" type="button" onclick="setAIDifficulty('medium')">🟡 Medio</button>
+          <button id="diff-hard" class="diff-btn hard" type="button" onclick="setAIDifficulty('hard')">🔴 Difícil</button>
+        </div>
+      </div>
+
       <div class="action-buttons">
         <button id="btn-confirm" class="btn-confirm" onclick="toggleConfirmSelection()">
           ✓ CONFIRMAR PERSONAJES
@@ -862,7 +925,7 @@
         <img id="ai-preview-img" src="" alt="AI">
       </div>
       <div class="preview-info">
-        <div class="preview-role ai">RIVAL (IA) - AUTOMÁTICO</div>
+        <div id="ai-preview-role" class="preview-role ai">RIVAL (IA) - MEDIO 🟡</div>
         <div id="ai-preview-name" class="preview-name">#006 Charizard</div>
         <div id="ai-preview-types" class="preview-types"></div>
         <div class="stat-bars">
@@ -1226,12 +1289,80 @@ function playSfx(type) {
 }
 
 // ============================================================================
-// 4. ESTADO DE SELECCIÓN DE PERSONAJES
+// 4. ESTADO DE SELECCIÓN DE PERSONAJES Y DIFICULTAD DE LA IA
 // ============================================================================
 let selectingSlot = "p1"; // 'p1' or 'ai'
 let selectedP1 = KANTO_POKEMON[24]; // #025 Pikachu por defecto
 let selectedAI = KANTO_POKEMON[5];  // #006 Charizard por defecto
 let selectionConfirmed = false;
+let aiDifficulty = "medium"; // 'easy' | 'medium' | 'hard'
+
+const DIFFICULTY_CONFIG = {
+  easy: {
+    name: "FÁCIL",
+    badge: "🟢 Fácil",
+    roleTag: "RIVAL (IA) - FÁCIL 🟢",
+    hudTag: "IA - FÁCIL 🟢",
+    speedMult: 0.60,             // Se mueve notablemente más lenta
+    reactionMin: 38,             // Reacciona muy tarde (~0.6 - 1.1 seg)
+    reactionMax: 68,
+    hesitationChance: 0.42,      // 42% de veces se queda quieta o dudando
+    attackRangeX: 62,            // Necesita estar pegada para golpear
+    attackRangeY: 46,
+    attackCooldownBonus: 22,     // Mucho tiempo de enfriamiento tras cada golpe (fácil castigo)
+    strongAttackChance: 0.10,    // Rara vez usa ataque fuerte
+    jumpChance: 0.03,            // Salta poco entre plataformas
+    dropChance: 0.03,
+    recoveryChance: 0.65,        // A veces tarda en reaccionar si cae del escenario
+    useBoostedRecovery: false    // No suele usar salto potenciado para volver
+  },
+  medium: {
+    name: "MEDIO",
+    badge: "🟡 Medio",
+    roleTag: "RIVAL (IA) - MEDIO 🟡",
+    hudTag: "IA - MEDIO 🟡",
+    speedMult: 0.85,             // Velocidad equilibrada
+    reactionMin: 16,             // Reacción moderada
+    reactionMax: 28,
+    hesitationChance: 0.12,
+    attackRangeX: 84,
+    attackRangeY: 58,
+    attackCooldownBonus: 0,
+    strongAttackChance: 0.32,
+    jumpChance: 0.08,
+    dropChance: 0.08,
+    recoveryChance: 0.95,
+    useBoostedRecovery: true
+  },
+  hard: {
+    name: "DIFÍCIL",
+    badge: "🔴 Difícil",
+    roleTag: "RIVAL (IA) - DIFÍCIL 🔴",
+    hudTag: "IA - DIFÍCIL 🔴",
+    speedMult: 1.08,             // Súper ágil y agresiva
+    reactionMin: 7,              // Reflejos casi inmediatos
+    reactionMax: 14,
+    hesitationChance: 0.0,       // No duda nunca
+    attackRangeX: 98,
+    attackRangeY: 68,
+    attackCooldownBonus: -3,
+    strongAttackChance: 0.54,    // Caza KOs activamente con ataques fuertes
+    jumpChance: 0.16,
+    dropChance: 0.16,
+    recoveryChance: 1.0,
+    useBoostedRecovery: true
+  }
+};
+
+function setAIDifficulty(diff) {
+  aiDifficulty = diff;
+  document.getElementById("diff-easy").classList.toggle("active", diff === "easy");
+  document.getElementById("diff-medium").classList.toggle("active", diff === "medium");
+  document.getElementById("diff-hard").classList.toggle("active", diff === "hard");
+  const roleEl = document.getElementById("ai-preview-role");
+  if (roleEl) roleEl.textContent = DIFFICULTY_CONFIG[diff].roleTag;
+  playSfx("select");
+}
 
 function setSelectingSlot(slot) {
   selectingSlot = slot;
@@ -1629,37 +1760,54 @@ canvas.addEventListener("mousedown", (e) => {
 });
 
 // ============================================================================
-// 7. INTELIGENCIA ARTIFICIAL DEL RIVAL (IA)
+// 7. INTELIGENCIA ARTIFICIAL DEL RIVAL (IA) SEGÚN DIFICULTAD
 // ============================================================================
 function updateAIFighter(ai, target) {
   if (ai.respawnTimer > 0 || ai.hitstunTimer > 0) return;
 
+  const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
   const dx = target.x - ai.x;
   const dy = target.y - ai.y;
   const dist = Math.hypot(dx, dy);
 
-  // 1. Si la IA está fuera de la plataforma principal, prioridad absoluta: regresar al centro
+  // 1. Recuperación cuando la IA sale de la plataforma principal
   const stageLeft = STAGE.mainPlatform.x + 40;
   const stageRight = STAGE.mainPlatform.x + STAGE.mainPlatform.w - 40;
 
   if (ai.x < stageLeft || ai.x > stageRight || ai.y > STAGE.mainPlatform.y + 20) {
     const centerStageX = STAGE.mainPlatform.x + STAGE.mainPlatform.w / 2;
     ai.facing = centerStageX > ai.x ? 1 : -1;
-    ai.vx += (ai.facing * ai.moveSpeed - ai.vx) * 0.25;
-    if (ai.vy > 1.5 && ai.y > 360) {
-      ai.performJump(true); // Usa salto potenciado para salvarse
+
+    // En dificultad Fácil, la IA tarda más en reaccionar y regresar
+    if (Math.random() < cfg.recoveryChance) {
+      ai.vx += (ai.facing * ai.moveSpeed * cfg.speedMult - ai.vx) * (aiDifficulty === "easy" ? 0.16 : 0.25);
+      if (ai.vy > 1.2 && ai.y > 360) {
+        ai.performJump(cfg.useBoostedRecovery);
+      }
     }
     return;
   }
 
+  // 2. Temporizador de toma de decisiones
   ai.aiDecisionTimer--;
   if (ai.aiDecisionTimer <= 0) {
-    ai.aiDecisionTimer = 14 + Math.floor(Math.random() * 14);
-    if (dist < 95) {
-      ai.aiAction = Math.random() < 0.45 ? "attackStrong" : "attackFast";
+    ai.aiDecisionTimer = cfg.reactionMin + Math.floor(Math.random() * (cfg.reactionMax - cfg.reactionMin));
+
+    if (Math.random() < cfg.hesitationChance) {
+      // Duda/Pausa típica de dificultad Fácil
+      ai.aiAction = "hesitate";
+    } else if (dist < cfg.attackRangeX + 10) {
+      const strongChance = target.damagePct >= 80 ? Math.min(0.85, cfg.strongAttackChance * 1.7) : cfg.strongAttackChance;
+      ai.aiAction = Math.random() < strongChance ? "attackStrong" : "attackFast";
     } else {
       ai.aiAction = "chase";
     }
+  }
+
+  // Si está en pausa/duda (Fácil), reduce velocidad
+  if (ai.aiAction === "hesitate") {
+    ai.vx *= 0.65;
+    return;
   }
 
   // Mirar hacia el jugador
@@ -1668,31 +1816,36 @@ function updateAIFighter(ai, target) {
   }
 
   // Movimiento horizontal hacia el jugador
-  if (Math.abs(dx) > 62) {
-    const targetVx = ai.facing * ai.moveSpeed * 0.92;
-    ai.vx += (targetVx - ai.vx) * 0.22;
+  if (Math.abs(dx) > cfg.attackRangeX * 0.7) {
+    const targetVx = ai.facing * (ai.moveSpeed * cfg.speedMult);
+    const accel = aiDifficulty === "easy" ? 0.14 : (aiDifficulty === "medium" ? 0.22 : 0.28);
+    ai.vx += (targetVx - ai.vx) * accel;
   } else {
     ai.vx *= 0.8;
   }
 
   // Saltar a plataformas si el jugador está arriba
-  if (dy < -75 && ai.onGround && Math.random() < 0.08) {
-    ai.performJump(dy < -165); // Usa salto potenciado si el jugador está en la plataforma superior
+  if (dy < -75 && ai.onGround && Math.random() < cfg.jumpChance) {
+    ai.performJump(dy < -160 && cfg.useBoostedRecovery);
   }
 
   // Bajar de plataforma si el jugador está debajo
-  if (dy > 75 && ai.onGround && ai.currentPlatform && ai.currentPlatform.passThrough && Math.random() < 0.08) {
+  if (dy > 75 && ai.onGround && ai.currentPlatform && ai.currentPlatform.passThrough && Math.random() < cfg.dropChance) {
     ai.performDropThrough();
   }
 
   // Ejecutar ataques cuando está en rango
-  if (Math.abs(dx) < 92 && Math.abs(dy) < 62 && !ai.attackState && ai.attackCooldown <= 0) {
-    // Si el jugador tiene alta acumulación de daño (>=85%), la IA prioriza ataques fuertes para buscar el KO
-    const strongChance = target.damagePct >= 85 ? 0.58 : 0.30;
+  if (Math.abs(dx) < cfg.attackRangeX && Math.abs(dy) < cfg.attackRangeY && !ai.attackState && ai.attackCooldown <= 0) {
+    const strongChance = target.damagePct >= 80 ? Math.min(0.85, cfg.strongAttackChance * 1.7) : cfg.strongAttackChance;
     if (Math.random() < strongChance) {
       ai.startAttack("strong");
     } else {
       ai.startAttack("fast");
+    }
+
+    // En dificultad Fácil se añade enfriamiento extra para que el jugador pueda contraatacar
+    if (cfg.attackCooldownBonus > 0) {
+      ai.attackCooldown += cfg.attackCooldownBonus;
     }
   }
 }
@@ -1946,14 +2099,16 @@ function endMatch(reasonType) {
     banner.textContent = "¡GANADOR!";
     banner.style.color = "#ffcc00";
     subtitle.textContent = `JUGADOR 1 (${playerFighter.poke.name.toUpperCase()})`;
+    const diffBadge = DIFFICULTY_CONFIG[aiDifficulty] ? DIFFICULTY_CONFIG[aiDifficulty].badge : "🟡";
     reason.textContent = reasonType === "KO"
-      ? `¡Dejaste al rival con 0 vidas! (Te quedaron ${p1Lives} vidas)`
-      : `¡Fin del tiempo (5:00)! Ganaste por tener más vidas (${p1Lives} vs ${aiLives})`;
+      ? `¡Dejaste al rival con 0 vidas! [Dificultad IA: ${diffBadge}]`
+      : `¡Fin del tiempo (5:00)! Ganaste por tener más vidas (${p1Lives} vs ${aiLives}) [Dificultad IA: ${diffBadge}]`;
     img.src = playerFighter.poke.spriteUrl;
   } else if (aiLives > p1Lives) {
     banner.textContent = "¡GANADOR!";
     banner.style.color = "#2ea8ff";
-    subtitle.textContent = `RIVAL IA (${aiFighter.poke.name.toUpperCase()})`;
+    const diffBadge = DIFFICULTY_CONFIG[aiDifficulty] ? DIFFICULTY_CONFIG[aiDifficulty].badge : "🟡";
+    subtitle.textContent = `RIVAL IA (${aiFighter.poke.name.toUpperCase()} - ${diffBadge})`;
     reason.textContent = reasonType === "KO"
       ? `¡Te quedaste sin vidas! (La IA conservó ${aiLives} vidas)`
       : `¡Fin del tiempo (5:00)! La IA ganó por tener más vidas (${aiLives} vs ${p1Lives})`;
@@ -1987,7 +2142,8 @@ function updateHudElements() {
   // AI
   const aiImg = document.getElementById("hud-ai-img");
   if (aiImg.src !== aiFighter.poke.spriteUrl) aiImg.src = aiFighter.poke.spriteUrl;
-  document.getElementById("hud-ai-name").textContent = `${aiFighter.poke.name} (IA)`;
+  const cfg = DIFFICULTY_CONFIG[aiDifficulty] || DIFFICULTY_CONFIG.medium;
+  document.getElementById("hud-ai-name").textContent = `${aiFighter.poke.name} (${cfg.hudTag})`;
   document.getElementById("hud-ai-pct").textContent = `${aiFighter.damagePct}%`;
   document.getElementById("hud-ai-pct").style.color = getDamageColor(aiFighter.damagePct);
   document.getElementById("hud-ai-bar").style.width = `${Math.min(100, aiFighter.damagePct)}%`;

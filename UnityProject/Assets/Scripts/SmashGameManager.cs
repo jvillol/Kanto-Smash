@@ -12,9 +12,10 @@ namespace KantoSmash
     {
         public static SmashGameManager Instance { get; private set; }
 
-        [Header("Selección de Personajes")]
+        [Header("Selección de Personajes y Dificultad")]
         public PokemonData selectedPlayerPokemon;
         public PokemonData selectedAIPokemon;
+        public AIDifficulty currentDifficulty = AIDifficulty.Medium;
 
         [Header("Estado de la Partida")]
         public bool IsMatchActive { get; private set; } = false;
@@ -74,6 +75,7 @@ namespace KantoSmash
 
             AIFighterBrain brain = aiObj.AddComponent<AIFighterBrain>();
             brain.targetPlayer = playerFighter;
+            brain.difficulty = currentDifficulty;
 
             matchRemainingSeconds = MaxMatchSeconds;
             IsMatchActive = true;

@@ -177,6 +177,23 @@ namespace KantoSmash
             GUI.Box(new Rect(Screen.width - 340, bottomY, 310, 110),
                 $"RIVAL (IA)\n{aiSel.FormattedNumber} {aiSel.name}\nTipo: {aiSel.primaryType}\nVEL:{aiSel.speed} ATQ:{aiSel.attack} PESO:{aiSel.weight}");
 
+            // Selector de Dificultad de la IA
+            float diffX = Screen.width / 2f - 150f;
+            float diffY = bottomY - 38f;
+            var diff = SmashGameManager.Instance.currentDifficulty;
+
+            GUI.backgroundColor = diff == AIDifficulty.Easy ? new Color(0.3f, 0.8f, 0.3f) : new Color(0.25f, 0.25f, 0.3f);
+            if (GUI.Button(new Rect(diffX, diffY, 96, 28), "🟢 Fácil"))
+                SmashGameManager.Instance.currentDifficulty = AIDifficulty.Easy;
+
+            GUI.backgroundColor = diff == AIDifficulty.Medium ? new Color(1f, 0.8f, 0.2f) : new Color(0.25f, 0.25f, 0.3f);
+            if (GUI.Button(new Rect(diffX + 102, diffY, 96, 28), "🟡 Medio"))
+                SmashGameManager.Instance.currentDifficulty = AIDifficulty.Medium;
+
+            GUI.backgroundColor = diff == AIDifficulty.Hard ? new Color(1f, 0.3f, 0.3f) : new Color(0.25f, 0.25f, 0.3f);
+            if (GUI.Button(new Rect(diffX + 204, diffY, 96, 28), "🔴 Difícil"))
+                SmashGameManager.Instance.currentDifficulty = AIDifficulty.Hard;
+
             float centerX = Screen.width / 2f - 150f;
             GUI.backgroundColor = _selectionConfirmed ? Color.green : Color.yellow;
             string confirmText = _selectionConfirmed ? "✓ SELECCIÓN CONFIRMADA" : "1. CONFIRMAR PERSONAJES";
@@ -239,8 +256,9 @@ namespace KantoSmash
 
             if (gm.aiFighter != null)
             {
+                string diffTag = gm.currentDifficulty == AIDifficulty.Easy ? "🟢 FÁCIL" : (gm.currentDifficulty == AIDifficulty.Medium ? "🟡 MEDIO" : "🔴 DIFÍCIL");
                 DrawFighterHUDCard(new Rect(Screen.width / 2f + 40f, Screen.height - 105f, 300f, 88f),
-                    $"IA: {gm.aiFighter.pokemonData.name}",
+                    $"IA ({diffTag}): {gm.aiFighter.pokemonData.name}",
                     gm.aiFighter.lives,
                     gm.aiFighter.damagePercentage,
                     new Color(0.2f, 0.65f, 1f));
